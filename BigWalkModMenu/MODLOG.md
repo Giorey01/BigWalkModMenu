@@ -297,3 +297,13 @@ installer), cioè il caso peggiore: la vecchia DLL delle facce era ancora al suo
 - Provato: su Linux a secco, `bash <(curl ...)`, `curl ... | bash -s -- --mod voice` e senza terminale; scaricamento
   e controllo dell'impronta dalla release vera. **Non provato: `install.ps1` (nessun PowerShell su questa macchina);
   lo prova l'utente su Windows.**
+
+### Fumetti rimasti in italiano (2026-10-10, dopo la 1.5.0)
+
+- Causa: `extras/bubbles.txt` viene scritto solo se manca. Chi aveva già usato una versione italiana (fino alla
+  1.3.0) si è tenuto `fumetti.txt` rinominato, quindi i pulsanti dei fumetti sono rimasti `Ciao!`, `Aspettatemi`,
+  `Seguitemi`, `Di qua!`, `Bravo!`, `Ops`, `Foto!`. La 1.4.0 aveva tradotto solo il testo di partenza nel codice.
+- Rimedio (`Extras`, `TranslateOldBubbles`): al primo avvio le righe uguali a uno dei sette testi italiani di
+  partenza diventano quelle inglesi; le righe scritte o cambiate dal giocatore restano come sono. Si fa una volta
+  sola (`Bubble.English` in `config/extras.cfg`), così chi poi riscrive `Ciao!` a mano se lo tiene.
+- Provato: compilazione di `Extras`. **Non provato in gioco al momento del commit.**

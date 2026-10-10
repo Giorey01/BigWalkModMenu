@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- **Extras**: speech bubble texts left in Italian by an older version (`Ciao!`, `Foto!`, ...) are translated to English on first start. Texts you wrote yourself are kept.
+
 ## 1.5.0
 - **Faces** is now a tab like every other: `BigWalkModMenu/BigWalk.ModMenu.Faces.dll`, no separate `FaceMaskMod` folder.
 - Photos, per-face settings and friends' faces move to `BigWalkModMenu/faces/` on first start; the old plugin file is removed.

@@ -65,6 +65,15 @@ namespace BigWalk.ModMenu.Extras
             {
                 File.WriteAllLines(BubbleFile, new[] { "Hi!", "LOL", "?", "!", "Wait for me", "Follow me", "This way!", "Nice!", "Oops", "<3", "zzz", "Photo!" });
             }
+            else if (!Config.GetBool("Bubble.English", false))
+            {
+                TranslateOldBubbles();
+            }
+            if (!Config.GetBool("Bubble.English", false))
+            {
+                Config.Set("Bubble.English", true);
+                Dirty = true;
+            }
             LoadBubbleTexts();
 
             Net.Register(EmoteMessage, false, OnEmote);
@@ -189,6 +198,32 @@ namespace BigWalk.ModMenu.Extras
 
         private string BubbleFile => ModMenuApi.Renamed(DataPath, "bubbles.txt", "fumetti.txt");
         private string StickerDir => ModMenuApi.Renamed(DataPath, "stickers", "adesivi");
+
+        // The texts written by the Italian versions (up to 1.3.0), in the order of the English ones.
+        private static readonly string[] OldBubbles = { "Ciao!", "Aspettatemi", "Seguitemi", "Di qua!", "Bravo!", "Ops", "Foto!" };
+        private static readonly string[] NewBubbles = { "Hi!", "Wait for me", "Follow me", "This way!", "Nice!", "Oops", "Photo!" };
+
+        // A bubbles.txt made before the interface became English keeps its Italian texts: translate the
+        // ones nobody touched, once. Lines the player wrote or changed stay as they are.
+        private void TranslateOldBubbles()
+        {
+            try
+            {
+                string[] lines = File.ReadAllLines(BubbleFile);
+                int changed = 0;
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    int k = Array.IndexOf(OldBubbles, lines[i].Trim());
+                    if (k < 0) continue;
+                    lines[i] = NewBubbles[k];
+                    changed++;
+                }
+                if (changed == 0) return;
+                File.WriteAllLines(BubbleFile, lines);
+                ModMenuApi.Log.LogInfo($"[Extras] bubbles.txt: {changed} Italian texts from an older version translated to English.");
+            }
+            catch (Exception ex) { ModMenuApi.Log.LogWarning($"[Extras] bubbles.txt: {ex.Message}"); }
+        }
 
         private void LoadBubbleTexts()
         {
