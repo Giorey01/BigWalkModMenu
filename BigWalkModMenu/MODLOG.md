@@ -280,3 +280,20 @@ installer), cioè il caso peggiore: la vecchia DLL delle facce era ancora al suo
   installata in `~/bigwalk-decomp/work/backup-install-1.4.0-before-1.5.0`.
 - **Non provati:** mettere una foto su una testa con la 1.5.0 (le schede si aprono, la logica delle facce non è
   cambiata, ma nessuna faccia è stata applicata in questa prova); partita con un amico; script PowerShell.
+
+### Installer da una riga (2026-10-10, dopo il rilascio della 1.5.0)
+
+- `dist/online/install.ps1` e `install.sh`: scaricano lo zip della loro versione, ne controllano lo SHA-256 e
+  lanciano l'installer che c'è dentro. `build.sh` li genera in `dist/` mettendoci versione e impronta dello zip
+  appena creato; vanno caricati nella release insieme allo zip (stessa esecuzione di `build.sh`, altrimenti
+  l'impronta non torna). Comandi: `irm .../releases/latest/download/install.ps1 | iex` e
+  `bash <(curl -fsSL .../releases/latest/download/install.sh)`.
+- Windows: l'installer parte in un processo `powershell -ExecutionPolicy Bypass` (nella finestra dell'utente i
+  file `.ps1` sono bloccati di default); i permessi di amministratore vengono chiesti solo se l'installer fallisce.
+  Niente `exit` nello script: gira dentro la finestra dell'utente.
+- Linux: con `curl | bash` le domande dell'installer leggono da `/dev/tty`; senza terminale si passa `--yes`.
+- Gli asset della release 1.5.0 sono stati ricaricati dalla stessa build (DLL identiche byte per byte a quelle
+  provate in gioco; cambia solo lo zip, quindi l'impronta).
+- Provato: su Linux a secco, `bash <(curl ...)`, `curl ... | bash -s -- --mod voice` e senza terminale; scaricamento
+  e controllo dell'impronta dalla release vera. **Non provato: `install.ps1` (nessun PowerShell su questa macchina);
+  lo prova l'utente su Windows.**

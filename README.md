@@ -74,12 +74,34 @@ Every tab, taken in game with version 1.5.0. Click one to see it full size.
 
 ## Install
 
+Close the game, then paste one line in a terminal.
+
+**Windows** (PowerShell):
+
+```powershell
+irm https://github.com/Giorey01/BigWalkModMenu/releases/latest/download/install.ps1 | iex
+```
+
+**Linux / Steam Deck**:
+
+```bash
+bash <(curl -fsSL https://github.com/Giorey01/BigWalkModMenu/releases/latest/download/install.sh)
+```
+
+On Linux, set this launch option for Big Walk in Steam once: `WINEDLLOVERRIDES="winhttp=n,b" %command%`.
+
+The line downloads the latest release, checks its SHA-256 and runs the installer inside it. On Windows it
+asks for administrator rights only if the game folder cannot be written without them. Both scripts are short
+and readable: [`install.ps1`](dist/online/install.ps1), [`install.sh`](dist/online/install.sh).
+
+<details>
+<summary>Prefer to download it yourself?</summary>
+
 1. Download `BigWalkModMenu-x.y.z.zip` from the [latest release](https://github.com/Giorey01/BigWalkModMenu/releases/latest) and extract all of it.
 2. Close the game.
-3. Run the installer:
-   - **Windows** — double-click `install-windows.bat`.
-   - **Linux / Steam Deck** — `bash install-linux.sh`, then once in Steam set the launch option
-     `WINEDLLOVERRIDES="winhttp=n,b" %command%`.
+3. **Windows**: double-click `install-windows.bat`. **Linux / Steam Deck**: `bash install-linux.sh`.
+
+</details>
 
 The installer finds the game, installs BepInEx 6 (be.785) if it is missing, checking its SHA-256, and asks
 which tabs you want. Run it again any time to update or add tabs; it never removes anything. The first start
@@ -119,6 +141,7 @@ BigWalkModMenu/
   MODLOG.md              project journal (in Italian): what was found, tested and not tested
 docs/screenshots/        the pictures in this page
 dist/pacchetto/          what ships: installers, README, changelog (DLLs are build output)
+dist/online/             the one-line installers (build.sh fills in version and checksum)
 tools/dev.sh             client of the in-game test bridge
 build.sh                 build + package
 .claude/skills/          the agent skills this mod was built with

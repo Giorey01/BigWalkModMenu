@@ -21,6 +21,10 @@ one DLL per tab.
     bash build.sh            # builds all projects, fills dist/pacchetto, makes dist/*.zip and dist/single/
     bash build.sh --no-zip
 
+A release on GitHub is `dist/BigWalkModMenu-<version>.zip`, `dist/install.sh`, `dist/install.ps1` and
+`dist/single/*.zip`, all from the same `build.sh` run: the two install scripts (templates in `dist/online`)
+carry the checksum of that zip, and the README's one-line installers fetch them from the latest release.
+
 `GAME_DIR` points at the game folder if it is not in `~/.local/share/Steam/steamapps/common/Big Walk`;
 `DOTNET` at the dotnet binary if it is not on PATH. The game must have BepInEx installed and have been
 started once: the references are the interop DLLs BepInEx generates in `BepInEx/interop`.

@@ -5,6 +5,8 @@ obj/
 
 # release artefacts (rebuilt from source, see MODLOG.md)
 dist/*.zip
+dist/install.sh
+dist/install.ps1
 dist/single/
 dist/pacchetto/BepInEx/**/*.dll
 

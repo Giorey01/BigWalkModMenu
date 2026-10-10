@@ -4,6 +4,8 @@
 #   bash build.sh              build, fill dist/pacchetto, make the zips in dist/
 #   bash build.sh --no-zip     build and fill dist/pacchetto only
 #
+# A release is: dist/BigWalkModMenu-<version>.zip, dist/install.sh, dist/install.ps1 and dist/single/*.zip.
+#
 # Needs the .NET 6 SDK (or newer) and the game installed with BepInEx started at least once.
 # Game somewhere else:  GAME_DIR="/path/to/Big Walk" bash build.sh
 # dotnet not on PATH:   DOTNET=~/.dotnet/dotnet bash build.sh
@@ -63,6 +65,14 @@ NAME="BigWalkModMenu-$VERSION"
 rm -f "$ROOT/dist/$NAME.zip"
 make_zip "$ROOT/dist/$NAME.zip" "$PKG"
 echo "  $NAME.zip"
+
+# The one-line installers ("irm ... | iex", "bash <(curl ...)"): they point at this version's zip and
+# carry its checksum, and go in the release next to it.
+SUM="$(sha256sum "$ROOT/dist/$NAME.zip" | cut -d' ' -f1)"
+for f in install.sh install.ps1; do
+  sed -e "/^#/!s/@VERSION@/$VERSION/g" -e "/^#/!s/@SHA256@/$SUM/g" "$ROOT/dist/online/$f" > "$ROOT/dist/$f"
+done
+echo "  install.sh, install.ps1"
 
 # One zip per mod, for mod sites that list them separately.
 SINGLE="$ROOT/dist/single"

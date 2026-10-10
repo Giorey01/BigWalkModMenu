@@ -31,7 +31,13 @@ Each tab that changes something leaves the game's own value alone while it is sw
 
 ## Install
 
-Extract the whole zip anywhere, close the game, then:
+Quickest: close the game and paste one line in a terminal. It downloads the latest release, checks it
+and runs the installer below.
+
+- **Windows** (PowerShell): `irm https://github.com/Giorey01/BigWalkModMenu/releases/latest/download/install.ps1 | iex`
+- **Linux / Steam Deck**: `bash <(curl -fsSL https://github.com/Giorey01/BigWalkModMenu/releases/latest/download/install.sh)`
+
+Or, with this zip: extract the whole of it anywhere, close the game, then:
 
 - **Windows**: double-click `install-windows.bat`.
 - **Linux / Steam Deck**: `bash install-linux.sh`, then once in Steam set the launch option
