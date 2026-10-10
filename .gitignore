@@ -17,3 +17,6 @@ facce_rimosse/
 *.jpg
 *.jpeg
 
+
+# screenshots of the menu for the README are the exception
+!docs/screenshots/*.png

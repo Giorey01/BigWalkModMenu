@@ -20,6 +20,7 @@
 <p align="center">
   <a href="https://github.com/Giorey01/BigWalkModMenu/releases/latest"><b>Download</b></a> ·
   <a href="#install">Install</a> ·
+  <a href="#screenshots">Screenshots</a> ·
   <a href="#the-tabs">Tabs</a> ·
   <a href="#build-from-source">Build</a> ·
   <a href="#fork-it-and-keep-going">Fork it</a>
@@ -30,6 +31,30 @@
 Open the menu in game with **F8** or **Insert** and drag it by its title bar. Every tab is its own DLL: the
 menu shows only the ones you installed, and a tab that is switched off leaves the game's own values alone.
 Everything is client-side unless noted below.
+
+## Screenshots
+
+Every tab, taken in game with version 1.5.0. Click one to see it full size.
+
+<table>
+<tr>
+<td align="center"><a href="docs/screenshots/general.png"><img src="docs/screenshots/general.png" width="200" alt="General tab"></a><br><sub>General</sub></td>
+<td align="center"><a href="docs/screenshots/faces.png"><img src="docs/screenshots/faces.png" width="200" alt="Faces tab"></a><br><sub>Faces</sub></td>
+<td align="center"><a href="docs/screenshots/solo.png"><img src="docs/screenshots/solo.png" width="200" alt="Solo tab"></a><br><sub>Solo</sub></td>
+<td align="center"><a href="docs/screenshots/character.png"><img src="docs/screenshots/character.png" width="200" alt="Character tab"></a><br><sub>Character</sub></td>
+</tr>
+<tr>
+<td align="center"><a href="docs/screenshots/camera.png"><img src="docs/screenshots/camera.png" width="200" alt="Camera tab"></a><br><sub>Camera</sub></td>
+<td align="center"><a href="docs/screenshots/performance.png"><img src="docs/screenshots/performance.png" width="200" alt="Performance tab"></a><br><sub>Performance</sub></td>
+<td align="center"><a href="docs/screenshots/world.png"><img src="docs/screenshots/world.png" width="200" alt="World tab"></a><br><sub>World</sub></td>
+<td align="center"><a href="docs/screenshots/reshade.png"><img src="docs/screenshots/reshade.png" width="200" alt="Reshade tab"></a><br><sub>Reshade</sub></td>
+</tr>
+<tr>
+<td align="center"><a href="docs/screenshots/voice.png"><img src="docs/screenshots/voice.png" width="200" alt="Voice tab"></a><br><sub>Voice</sub></td>
+<td align="center"><a href="docs/screenshots/extras.png"><img src="docs/screenshots/extras.png" width="200" alt="Extras tab"></a><br><sub>Extras</sub></td>
+<td align="center"><a href="docs/screenshots/replay.png"><img src="docs/screenshots/replay.png" width="200" alt="Replay tab"></a><br><sub>Replay</sub></td>
+</tr>
+</table>
 
 ## The tabs
 
@@ -92,6 +117,7 @@ BigWalkModMenu/
                          one project per tab
   Directory.Build.props  version, shared settings, references to the game
   MODLOG.md              project journal (in Italian): what was found, tested and not tested
+docs/screenshots/        the pictures in this page
 dist/pacchetto/          what ships: installers, README, changelog (DLLs are build output)
 tools/dev.sh             client of the in-game test bridge
 build.sh                 build + package
@@ -99,7 +125,7 @@ build.sh                 build + package
 CLAUDE.md                project notes for an AI agent or a new contributor
 ```
 
-No photos, no game files and no decompiled game code are in this repository.
+No personal photos, no game files and no decompiled game code are in this repository.
 
 ## Fork it and keep going
 

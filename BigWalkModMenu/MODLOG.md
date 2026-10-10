@@ -258,5 +258,25 @@ Fatti trovati in gioco:
   lavoro (`.claude/skills`, da universal-modder, licenza MIT) e `CLAUDE.md` con build e ciclo di prova.
 - Provato: compilazione degli 11 progetti; installer Linux su una cartella finta con la vecchia mod delle facce
   (prova a secco e vera: DLL vecchie tolte, foto e impostazioni lasciate al loro posto), disinstallatore a secco.
-  **Non provati: l'avvio in gioco di questa versione (cancellazione della vecchia DLL da `Core`, spostamento di
-  foto e impostazioni) e gli script PowerShell.**
+  **Non provati (al momento del rilascio): l'avvio in gioco e gli script PowerShell.**
+
+### Prova in gioco della 1.5.0 (2026-10-10, 16:47–16:55) — dal log e dal ponte di test
+
+Installazione "a mano" dello zip scaricato dalla release (cartella `BepInEx` copiata sopra la 1.4.0, senza
+installer), cioè il caso peggiore: la vecchia DLL delle facce era ancora al suo posto.
+
+- Primo avvio: `Removed the old faces plugin file ...BigWalk.FaceMaskMod.dll` e `...StbImageSharp.dll` da `Core`,
+  poi `[Faces] Moved ...FaceMaskMod\faces to ...BigWalkModMenu\faces\photos` e lo stesso per `settings`
+  (i 6 file `.cfg` sono arrivati), cartella `FaceMaskMod` sparita, `5 faces` lette dalla cartella scelta dall'utente.
+  11 moduli registrati, tutte le patch `OK`.
+- In quel primo avvio BepInEx scrive **una volta** `Error loading [Big Walk Face Mask Mod 3.3.0]: FileNotFoundException`:
+  aveva già visto la vecchia DLL prima che `Core` la cancellasse. È atteso e non si ripete (secondo avvio: nessun errore).
+  Con l'installer non succede: la DLL viene tolta prima.
+- Secondo avvio con `Core` in versione `Dev`: `state` → in partita, 11 moduli, `faults=0` per tutti; ogni scheda
+  aperta e fotografata (`open <scheda>` + `shot`), nessuna eccezione nel log dopo. Da quelle foto vengono le
+  immagini di `docs/screenshots/` (ritagliate sul menu; nella scheda Faces la riga col percorso della cartella
+  foto è coperta perché contiene il nome utente).
+- Dopo la prova: gioco chiuso, DLL di `Core` del pacchetto rimessa, cartella `dev` tolta. Copia della 1.4.0
+  installata in `~/bigwalk-decomp/work/backup-install-1.4.0-before-1.5.0`.
+- **Non provati:** mettere una foto su una testa con la 1.5.0 (le schede si aprono, la logica delle facce non è
+  cambiata, ma nessuna faccia è stata applicata in questa prova); partita con un amico; script PowerShell.
