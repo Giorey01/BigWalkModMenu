@@ -24,6 +24,13 @@ namespace BigWalk.ModMenu.Character
             return Get($"torus{tubeRadius:0.###}", () => BuildTorus(tubeRadius, 24, 8));
         }
 
+        /// <summary>A twenty-sided die with flat faces, corners at radius 1. One face looks towards -X (where
+        /// the nose is) and the face above it, tilted up like a forehead, is the 20.</summary>
+        public static Mesh D20 => Get("d20", () => BuildD20(false));
+
+        /// <summary>The numbers 1 to 20 of <see cref="D20"/>, lying just above its faces.</summary>
+        public static Mesh D20Numbers => Get("d20numbers", () => BuildD20(true));
+
         private static Mesh Get(string key, Func<Mesh> build)
         {
             if (_cache.TryGetValue(key, out Mesh m) && Game.Alive(m)) return m;
@@ -175,6 +182,168 @@ namespace BigWalk.ModMenu.Character
             }
             return Finish(verts, tris);
         }
+
+        // ---- twenty-sided die ----
+
+        // The 20 faces (three corners each) in the order of their numbers: [0] is the 1, [19] the 20.
+        private static Vector3[][] D20Faces()
+        {
+            float phi = (1f + MathF.Sqrt(5f)) / 2f;
+            var corners = new List<Vector3>();
+            for (int a = -1; a <= 1; a += 2)
+            {
+                for (int b = -1; b <= 1; b += 2)
+                {
+                    corners.Add(new Vector3(0f, a, b * phi).normalized);
+                    corners.Add(new Vector3(a, b * phi, 0f).normalized);
+                    corners.Add(new Vector3(a * phi, 0f, b).normalized);
+                }
+            }
+
+            // Three corners that are all one edge apart make a face.
+            float edge = 4f / MathF.Sqrt(10f + 2f * MathF.Sqrt(5f)), slack = edge * 1.01f;
+            var faces = new List<Vector3[]>();
+            for (int i = 0; i < 12; i++)
+            {
+                for (int j = i + 1; j < 12; j++)
+                {
+                    if ((corners[i] - corners[j]).magnitude > slack) continue;
+                    for (int k = j + 1; k < 12; k++)
+                    {
+                        if ((corners[i] - corners[k]).magnitude > slack || (corners[j] - corners[k]).magnitude > slack) continue;
+                        faces.Add(new[] { corners[i], corners[j], corners[k] });
+                    }
+                }
+            }
+
+            // Turn the die: the first face goes to -X, and a face next to it goes straight above it.
+            Vector3 front = Centre(faces[0]).normalized, above = front;
+            for (int i = 1; i < faces.Count; i++)
+            {
+                Vector3 n = Centre(faces[i]).normalized;
+                if (Vector3.Dot(n, front) > 0.7f) { above = n; break; } // neighbours are 41.8 degrees apart
+            }
+            Vector3 bx = front * -1f;
+            Vector3 by = (above - front * Vector3.Dot(above, front)).normalized;
+            Vector3 bz = Vector3.Cross(bx, by);
+            foreach (Vector3[] f in faces)
+            {
+                for (int i = 0; i < 3; i++) f[i] = new Vector3(Vector3.Dot(bx, f[i]), Vector3.Dot(by, f[i]), Vector3.Dot(bz, f[i]));
+            }
+
+            // Opposite faces add up to 21, as on a real die. The forehead is the 20; the other pairs go
+            // round the die with high and low numbers alternating between the upper and the lower half.
+            var numbered = new Vector3[20][];
+            var upper = new List<Vector3[]>();
+            foreach (Vector3[] f in faces)
+            {
+                Vector3 n = Centre(f).normalized;
+                if (n.x < -0.7f && n.y > 0.5f) { numbered[19] = f; numbered[0] = Opposite(faces, f); }
+                else if (n.y > 0.01f || (n.y > -0.01f && n.x < 0f)) upper.Add(f); // the upper half, and the front face
+            }
+            upper.Sort((a, b) => Bearing(a).CompareTo(Bearing(b)));
+            for (int i = 0; i < upper.Count; i++)
+            {
+                int high = 19 - i; // 19, 18, ... 11
+                int number = i % 2 == 0 ? high : 21 - high;
+                numbered[number - 1] = upper[i];
+                numbered[20 - number] = Opposite(faces, upper[i]);
+            }
+            return numbered;
+        }
+
+        private static Vector3 Centre(Vector3[] face) => (face[0] + face[1] + face[2]) / 3f;
+
+        private static float Bearing(Vector3[] face)
+        {
+            Vector3 c = Centre(face);
+            return MathF.Atan2(c.z, -c.x) + c.y * 0.001f;
+        }
+
+        private static Vector3[] Opposite(List<Vector3[]> faces, Vector3[] face)
+        {
+            Vector3 n = Centre(face);
+            Vector3[] best = face;
+            foreach (Vector3[] f in faces) if (Vector3.Dot(Centre(f), n) < Vector3.Dot(Centre(best), n)) best = f;
+            return best;
+        }
+
+        // Seven-segment digits: bit 0 top, 1 upper right, 2 lower right, 3 bottom, 4 lower left, 5 upper left, 6 middle.
+        private static readonly int[] DigitSegments = { 0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F };
+
+        private static Mesh BuildD20(bool numbers)
+        {
+            var verts = new List<Vector3>();
+            var tris = new List<int>();
+            Vector3[][] faces = D20Faces();
+            for (int f = 0; f < faces.Length; f++)
+            {
+                Vector3[] face = faces[f];
+                Vector3 centre = Centre(face), normal = centre.normalized;
+                if (!numbers)
+                {
+                    AddFlat(verts, tris, normal, face[0], face[1], face[2], face[2]);
+                    continue;
+                }
+
+                // The number stands as upright as the face allows: its top points at a corner, or away from one.
+                Vector3 up = Vector3.up;
+                float best = float.MinValue;
+                for (int i = 0; i < 6; i++)
+                {
+                    Vector3 d = (face[i % 3] - centre).normalized * (i < 3 ? 1f : -1f);
+                    if (d.y > best + 1e-4f) { best = d.y; up = d; }
+                }
+                Vector3 right = Vector3.Cross(normal, up);
+                Vector3 origin = centre + normal * 0.012f; // clear of the face, so the two do not flicker
+
+                const float h = 0.27f, w = 0.15f, t = 0.042f, gap = 0.065f;
+                string text = (f + 1).ToString();
+                float width = gap * (text.Length - 1);
+                foreach (char ch in text) width += ch == '1' ? t : w;
+                float x = -width / 2f;
+                foreach (char ch in text)
+                {
+                    // A 1 is just the bar, so that it sits in the middle of its own space.
+                    float cell = ch == '1' ? t : w;
+                    float l = x + t / 2f, r = x + cell - t / 2f;
+                    int seg = DigitSegments[ch - '0'];
+                    if ((seg & 0x01) != 0) AddBar(verts, tris, origin, right, up, normal, l, h / 2f, r, h / 2f, t);
+                    if ((seg & 0x40) != 0) AddBar(verts, tris, origin, right, up, normal, l, 0f, r, 0f, t);
+                    if ((seg & 0x08) != 0) AddBar(verts, tris, origin, right, up, normal, l, -h / 2f, r, -h / 2f, t);
+                    if ((seg & 0x02) != 0) AddBar(verts, tris, origin, right, up, normal, r, 0f, r, h / 2f, t);
+                    if ((seg & 0x04) != 0) AddBar(verts, tris, origin, right, up, normal, r, -h / 2f, r, 0f, t);
+                    if ((seg & 0x20) != 0) AddBar(verts, tris, origin, right, up, normal, l, 0f, l, h / 2f, t);
+                    if ((seg & 0x10) != 0) AddBar(verts, tris, origin, right, up, normal, l, -h / 2f, l, 0f, t);
+                    x += cell + gap;
+                }
+                // 6 and 9 are underlined, as on a real die, to tell them apart.
+                if (text == "6" || text == "9") AddBar(verts, tris, origin, right, up, normal, -w / 2f, -h / 2f - 0.075f, w / 2f, -h / 2f - 0.075f, t * 0.7f);
+            }
+            return Finish(verts, tris);
+        }
+
+        // A straight bar of the given thickness between two points of a face, square ends included.
+        private static void AddBar(List<Vector3> verts, List<int> tris, Vector3 origin, Vector3 right, Vector3 up, Vector3 normal,
+                                   float x0, float y0, float x1, float y1, float thickness)
+        {
+            float e = thickness / 2f;
+            AddFlat(verts, tris, normal,
+                origin + right * (x0 - e) + up * (y0 - e), origin + right * (x0 - e) + up * (y1 + e),
+                origin + right * (x1 + e) + up * (y1 + e), origin + right * (x1 + e) + up * (y0 - e));
+        }
+
+        // A flat triangle (c == d) or quad with its own corners, wound so that it is seen from where 'outward' points.
+        private static void AddFlat(List<Vector3> verts, List<int> tris, Vector3 outward, Vector3 a, Vector3 b, Vector3 c, Vector3 d)
+        {
+            bool flip = Vector3.Dot(Vector3.Cross(b - a, c - a), outward) < 0f;
+            int first = verts.Count;
+            verts.Add(a); verts.Add(b); verts.Add(c);
+            tris.Add(first); tris.Add(flip ? first + 2 : first + 1); tris.Add(flip ? first + 1 : first + 2);
+            if ((d - c).magnitude < 1e-6f) return;
+            verts.Add(d);
+            tris.Add(first); tris.Add(flip ? first + 3 : first + 2); tris.Add(flip ? first + 2 : first + 3);
+        }
     }
 
     /// <summary>One piece of a hat or accessory, in "head units": head radius 1, up +Y, face towards -X.</summary>
@@ -202,6 +371,25 @@ namespace BigWalk.ModMenu.Character
         };
 
         public static readonly string[] AccessoryNames = { "Glasses", "Moustache", "Ears", "Horns" };
+
+        public static readonly string[] HeadNames = { "Normal", "D20 die" };
+
+        // An icosahedron's faces are at 0.795 of its corners' radius: at this size they just clear the head.
+        public const float DieRadius = 1.27f;
+        // With the die on, hats go up to its top and accessories forward to its front face.
+        public const float DieHatLift = 0.3f, DieAccessoryShift = 0.08f;
+
+        /// <summary>The shape put over the head; the numbers use the second material.</summary>
+        public static List<ShapePart> Head(int index)
+        {
+            var p = new List<ShapePart>();
+            if (index == 1)
+            {
+                p.Add(new ShapePart(Shapes.D20, V(0f, 0f, 0f), U(DieRadius)));
+                p.Add(new ShapePart(Shapes.D20Numbers, V(0f, 0f, 0f), U(DieRadius), default, true));
+            }
+            return p;
+        }
 
         private static Vector3 V(float x, float y, float z) => new Vector3(x, y, z);
         private static Vector3 U(float s) => new Vector3(s, s, s);

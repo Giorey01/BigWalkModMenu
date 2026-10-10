@@ -12,7 +12,7 @@ Open the menu with **F8** or **Insert**. Drag it by its title bar.
 | Base menu (General) | `BigWalk.ModMenu.dll` | Required. The window, key bindings, menu size, sharing your look with friends who run the mod. |
 | Faces | `BigWalk.ModMenu.Faces.dll` | Put a photo on a character's head (and torso), with placement controls. Photos are read from a folder you choose. |
 | Solo | `BigWalk.ModMenu.Solo.dll` | Play alone with up to four characters: add, switch, remove, gather, follow. Host only. |
-| Character | `BigWalk.ModMenu.Character.dll` | Hats, accessories, colours, proportions, light and trail. |
+| Character | `BigWalk.ModMenu.Character.dll` | Hats, accessories, a D20 die for a head, colours, proportions, light and trail. |
 | Camera | `BigWalk.ModMenu.Camera.dll` | Selfie, third person, free camera, screenshots up to 4x, hide the interface. |
 | Performance | `BigWalk.ModMenu.Performance.dll` | FPS counter; render scale 10-200% (supersampling), FOV 45-150, FXAA/SMAA/TAA/none, shadow cascades and resolution, soft shadows, upscaling filter, LOD, anisotropic filtering, per-system quality. |
 | World | `BigWalk.ModMenu.World.dll` | Fixed time of day (only you see it), sky, light and fog, colour filters. |

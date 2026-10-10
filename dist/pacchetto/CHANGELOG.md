@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- **Character**: new **Head → Shape** choice with a **D20 die**: a twenty-sided die with its numbers, in the head's colour. Friends with the mod see it; on versions up to 1.5.0 they see your normal head.
 - **Extras**: speech bubble texts left in Italian by an older version (`Ciao!`, `Foto!`, ...) are translated to English on first start. Texts you wrote yourself are kept.
 
 ## 1.5.0

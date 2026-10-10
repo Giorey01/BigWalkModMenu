@@ -106,18 +106,29 @@ namespace BigWalk.ModMenu
                 }
                 case "call":
                 {
-                    // Parameterless method on the first active object of a game type: "call HostMenuConfirm ActionStart"
+                    // Method on the first active object of a game type, private ones too: "call HostMenuConfirm ActionStart".
+                    // One number, as a third word, is passed to a method that takes an int, a bool, a float or an enum.
                     Type t = GameType(a[1]);
                     if (t == null) return "no type";
-                    MethodInfo method = t.GetMethod(a[2], BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static, null, Type.EmptyTypes, null);
+                    MethodInfo method = null;
+                    foreach (MethodInfo candidate in t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
+                    {
+                        if (candidate.Name == a[2] && candidate.GetParameters().Length == a.Length - 3) { method = candidate; break; }
+                    }
                     if (method == null) return "no method";
-                    if (method.IsStatic) return "ok " + method.Invoke(null, null);
+                    object[] args = null;
+                    if (a.Length > 3)
+                    {
+                        Type pt = method.GetParameters()[0].ParameterType;
+                        args = new[] { pt.IsEnum ? Enum.ToObject(pt, int.Parse(a[3])) : Convert.ChangeType(a[3], pt, System.Globalization.CultureInfo.InvariantCulture) };
+                    }
+                    if (method.IsStatic) return "ok " + method.Invoke(null, args);
                     foreach (var o in Resources.FindObjectsOfTypeAll(Il2CppType.From(t)))
                     {
                         var c = o.TryCast<Component>();
                         if (c == null || !c.gameObject.activeInHierarchy) continue;
                         object target = typeof(Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase).GetMethod("Cast").MakeGenericMethod(t).Invoke(o, null);
-                        return "ok " + method.Invoke(target, null);
+                        return "ok " + method.Invoke(target, args);
                     }
                     return "no active object";
                 }

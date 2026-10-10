@@ -55,6 +55,7 @@ namespace BigWalk.ModMenu.Character
         public readonly Tint[] Body = { new Tint(), new Tint(0.33f), new Tint(0.6f) };
         public float Torso = 1f, Bottom = 1f, Hands = 1f, Feet = 1f, Limbs = 1f;
         public float NoseSize = 1f, NoseLength = 1f;
+        public int Head; // index in Wardrobe.HeadNames
         public int Hat;
         public float HatSize = 1f, HatHeight;
         public readonly Tint HatColour = new Tint(0f, 0f, 0.12f, true);
@@ -100,6 +101,7 @@ namespace BigWalk.ModMenu.Character
             w.Q8(GlowPower, 0f, 3f);
             Write(w, Trail);
             w.Q8(TrailLength, 0.5f, 15f);
+            w.U8(Head); // added after 1.5.0, at the end: older versions stop reading before it
             return w.ToArray();
         }
 
@@ -130,6 +132,12 @@ namespace BigWalk.ModMenu.Character
             look.GlowPower = r.Q8(0f, 3f);
             Read(r, look.Trail);
             look.TrailLength = r.Q8(0.5f, 15f);
+            if (r.Remaining > 0)
+            {
+                // Not there in looks from 1.5.0 and older; a shape this version does not know is shown as a normal head.
+                int head = r.U8();
+                look.Head = head < Wardrobe.HeadNames.Length ? head : 0;
+            }
             return r.Failed ? null : look;
         }
 
@@ -145,6 +153,7 @@ namespace BigWalk.ModMenu.Character
             Limbs = c.GetFloat(p + "Scale.Limbs", 1f);
             NoseSize = c.GetFloat(p + "Nose.Size", 1f);
             NoseLength = c.GetFloat(p + "Nose.Length", 1f);
+            Head = Mathf.Clamp(c.GetInt(p + "HeadShape", 0), 0, Wardrobe.HeadNames.Length - 1);
             Hat = Mathf.Clamp(c.GetInt(p + "Hat", 0), 0, Wardrobe.HatNames.Length - 1);
             HatSize = c.GetFloat(p + "Hat.Size", 1f);
             HatHeight = c.GetFloat(p + "Hat.Height", 0f);
@@ -170,6 +179,7 @@ namespace BigWalk.ModMenu.Character
             c.Set(p + "Scale.Limbs", Limbs);
             c.Set(p + "Nose.Size", NoseSize);
             c.Set(p + "Nose.Length", NoseLength);
+            c.Set(p + "HeadShape", Head);
             c.Set(p + "Hat", Hat);
             c.Set(p + "Hat.Size", HatSize);
             c.Set(p + "Hat.Height", HatHeight);
@@ -212,7 +222,7 @@ namespace BigWalk.ModMenu.Character
             public Renderer HeadRenderer;     // the head LOD the game shows or hides
             public GameObject Outfit;
             public string OutfitKey;
-            public Material HatMat, HatSecondMat, AccessoryMat;
+            public Material HatMat, HatSecondMat, AccessoryMat, HeadMat, HeadSecondMat;
             public readonly List<Renderer> OutfitRenderers = new List<Renderer>();
             public Light Glow;
             public TrailRenderer Trail;
@@ -531,7 +541,7 @@ namespace BigWalk.ModMenu.Character
         private static string OutfitKey(Look look)
         {
             var sb = new StringBuilder();
-            sb.Append(look.Hat);
+            sb.Append(look.Hat).Append('h').Append(look.Head);
             foreach (bool a in look.Accessories) sb.Append(a ? '1' : '0');
             return sb.ToString();
         }
@@ -539,7 +549,7 @@ namespace BigWalk.ModMenu.Character
         private void ApplyOutfit(Body body, Look look)
         {
             string key = OutfitKey(look);
-            bool wanted = look.Hat != 0 || Array.IndexOf(look.Accessories, true) >= 0;
+            bool wanted = look.Hat != 0 || look.Head != 0 || Array.IndexOf(look.Accessories, true) >= 0;
 
             if (body.OutfitKey != key)
             {
@@ -556,20 +566,28 @@ namespace BigWalk.ModMenu.Character
             if (hat != null)
             {
                 hat.localScale = new Vector3(look.HatSize, look.HatSize, look.HatSize);
-                hat.localPosition = new Vector3(0f, look.HatHeight, 0f);
+                hat.localPosition = new Vector3(0f, look.HatHeight + (look.Head != 0 ? Wardrobe.DieHatLift : 0f), 0f);
             }
 
             Game.SetMaterialColour(body.HatMat, look.HatColour.Colour);
             Game.SetMaterialColour(body.HatSecondMat, look.HatSecond.Colour);
             Game.SetMaterialColour(body.AccessoryMat, look.AccessoryColour.Colour);
+            if (look.Head != 0)
+            {
+                // The head shape has the head's colour, and its numbers whichever of light and dark shows on it.
+                Color head = HeadColour(body, look);
+                bool light = 0.299f * head.r + 0.587f * head.g + 0.114f * head.b > 0.55f;
+                Game.SetMaterialColour(body.HeadMat, head);
+                Game.SetMaterialColour(body.HeadSecondMat, light ? new Color(0.07f, 0.07f, 0.09f) : new Color(0.96f, 0.95f, 0.9f));
+            }
 
             // Follow the head: in first person the game hides your own head, and the hat must go with it.
-            Renderer head = body.HeadRenderer;
-            if (head != null)
+            Renderer headLod = body.HeadRenderer;
+            if (headLod != null)
             {
-                bool visible = head.enabled && head.gameObject.activeInHierarchy;
-                var shadows = head.shadowCastingMode;
-                int layer = head.gameObject.layer;
+                bool visible = headLod.enabled && headLod.gameObject.activeInHierarchy;
+                var shadows = headLod.shadowCastingMode;
+                int layer = headLod.gameObject.layer;
                 foreach (Renderer r in body.OutfitRenderers)
                 {
                     if (r == null) continue;
@@ -580,6 +598,14 @@ namespace BigWalk.ModMenu.Character
             }
         }
 
+        // The custom head colour, or the one the game gave this player.
+        private static Color HeadColour(Body body, Look look)
+        {
+            if (look.Body[0].On) return look.Body[0].Colour;
+            try { return body.Pc.looks.headColor.color; } catch { }
+            return new Color(0.85f, 0.85f, 0.85f);
+        }
+
         private void BuildOutfit(Body body, Look look)
         {
             if (body.HatMat == null)
@@ -587,6 +613,8 @@ namespace BigWalk.ModMenu.Character
                 body.HatMat = Game.NewMaterial(look.HatColour.Colour);
                 body.HatSecondMat = Game.NewMaterial(look.HatSecond.Colour);
                 body.AccessoryMat = Game.NewMaterial(look.AccessoryColour.Colour);
+                body.HeadMat = Game.NewMaterial(Color.white);
+                body.HeadSecondMat = Game.NewMaterial(Color.white);
             }
             if (body.HatMat == null) return; // no usable shader
 
@@ -596,7 +624,15 @@ namespace BigWalk.ModMenu.Character
             hatRoot.transform.SetParent(root.transform, false);
             var accRoot = new GameObject("accessories");
             accRoot.transform.SetParent(root.transform, false);
+            var headRoot = new GameObject("head");
+            headRoot.transform.SetParent(root.transform, false);
 
+            foreach (ShapePart part in Wardrobe.Head(look.Head))
+            {
+                AddPart(body, headRoot.transform, part, part.Secondary ? body.HeadSecondMat : body.HeadMat);
+            }
+            // Glasses and moustache move out to the die's front face (the face looks towards -X).
+            if (look.Head != 0) accRoot.transform.localPosition = new Vector3(-Wardrobe.DieAccessoryShift, 0f, 0f);
             foreach (ShapePart part in Wardrobe.Hat(look.Hat))
             {
                 AddPart(body, hatRoot.transform, part, part.Secondary ? body.HatSecondMat : body.HatMat);
@@ -738,6 +774,10 @@ namespace BigWalk.ModMenu.Character
                 changed = true;
             }
             ui.Note("Head size is in the Faces tab.");
+
+            ui.Header("Head");
+            changed |= ui.Dropdown("character.head", "Shape", Wardrobe.HeadNames, ref look.Head);
+            if (look.Head != 0) ui.Note("The die has the head's colour and goes over the head, so it covers a face photo. The nose stays.", 2);
 
             ui.Header("Hat");
             changed |= ui.Dropdown("character.hat", "Hat", Wardrobe.HatNames, ref look.Hat);

@@ -106,6 +106,15 @@ namespace BigWalk.ModMenu.Camera
 
         // ---- modes ----
 
+#if DEV
+        // Test bridge: "mod camera selfie|third|free|off".
+        public override string DevCommand(string[] a)
+        {
+            if (a.Length > 2 && Enum.TryParse(a[2] == "third" ? "ThirdPerson" : a[2], true, out Mode mode) && mode != _mode) SetMode(mode);
+            return "mode=" + _mode;
+        }
+#endif
+
         private void SetMode(Mode mode)
         {
             if (mode == _mode) mode = Mode.Off; // the same key again switches the mode off

@@ -307,3 +307,43 @@ installer), cioè il caso peggiore: la vecchia DLL delle facce era ancora al suo
   partenza diventano quelle inglesi; le righe scritte o cambiate dal giocatore restano come sono. Si fa una volta
   sola (`Bubble.English` in `config/extras.cfg`), così chi poi riscrive `Ciao!` a mano se lo tiene.
 - Provato: compilazione di `Extras`. **Non provato in gioco al momento del commit.**
+
+### Testa a forma di D20 (2026-10-10, dopo la 1.5.0) — richiesta di un utente
+
+- Scheda Character, nuova sezione **Head → Shape**: `Normal` / `D20 die` (`Look.Head`, chiave `P<n>.HeadShape`).
+- Come è fatto: non si tocca la testa del gioco. Il dado è un pezzo del "vestito" (`bwmm_outfit/head`) attaccato
+  all'ancora della testa come cappelli e accessori, quindi segue già visibilità (in prima persona sparisce con la
+  testa), ombre e livello. Raggio dei vertici 1,27 volte il raggio della testa: le facce di un icosaedro stanno a
+  0,795 del raggio dei vertici, quindi sfiorano la testa (1,009) e la coprono tutta; il naso esce dalla faccia
+  davanti. Scelta fatta così perché la scheda Faces sostituisce già la mesh della testa con la sua sfera: due
+  schede sullo stesso `MeshFilter` si sarebbero pestate i piedi. Conseguenza: **il dado copre la foto della faccia**
+  (scritto nella scheda).
+- `Shapes.D20` / `Shapes.D20Numbers` (`Character/Shapes.cs`): icosaedro a facce piatte, una faccia verso -X (il
+  viso) e quella sopra, inclinata come una fronte, è il 20; facce opposte a somma 21; numeri a sette segmenti
+  costruiti come geometria (nessuna texture), 6 e 9 sottolineati. Colore del dado = colore della testa (quello
+  scelto nella scheda, altrimenti `looks.headColor.color` del gioco); numeri scuri o chiari secondo la luminosità.
+- Con il dado: cappello alzato di 0,3 (`DieHatLift`), accessori spostati in avanti di 0,08 (`DieAccessoryShift`).
+- Rete: un byte in più **in fondo** al messaggio dell'aspetto (16), senza cambiare `WireVersion`: la 1.5.0 smette di
+  leggere prima e mostra la testa normale; questa versione accetta anche i messaggi senza quel byte.
+- Ponte di prova: `call` ora trova anche i metodi privati e passa un argomento (int, bool, float, enum);
+  `mod camera selfie|third|free|off`. Per entrare in partita da soli: `call MicCheckMenu ActionContinue`, (aspettare
+  che `TitleMenu` sia attivo), `call TitleMenu GoToHostMenu`, `host 0`, `call HostMenuConfirm ActionStart`,
+  `call PlayerCountMenu SetPlayerCount 2`, `call PlayerCountMenu GoToLoadingMenu`, `call NetworkMinder StartHost`.
+  (`ActionProceed` non fa niente finché il numero di giocatori è `NotSet`.)
+- Numero di versione non toccato (resta 1.5.0): niente rilascio in questo passaggio; il changelog ha "Unreleased".
+
+Provato fuori dal gioco: `Shapes.cs` compilato con finti tipi Unity, triangoli tutti rivolti all'esterno, le 20
+facce disegnate una per una (numeri giusti, non specchiati, dentro la faccia, opposte a somma 21).
+
+Provato in gioco (23:40–23:50, partita da solo avviata dal ponte, foto in `~/bigwalk-decomp/work/d20-shots`):
+- dado visibile in selfie e in terza persona con il colore scelto per la testa, 20 sulla fronte, naso che esce dalla
+  faccia davanti, 6 sottolineato dietro; cilindro appoggiato sopra; occhiali e baffi sulla faccia davanti;
+  in prima persona non si vede; tornando a `Normal` sparisce. Nessuna eccezione nel log, `faults=0` per tutti.
+- fumetti (commit precedente): al primo avvio `bubbles.txt: 7 Italian texts ... translated`, file poi in inglese.
+- Dopo la prova: gioco chiuso, DLL e `config/` rimesse dalla copia `~/bigwalk-decomp/work/backup-install-1.5.0-before-d20`
+  (installazione di nuovo 1.5.0), cartella `dev` tolta. `bubbles.txt` è rimasto tradotto. Il gioco ha salvato la
+  partita del primo slot durante la prova.
+
+**Non provati:** dado visto da un amico in rete (e da un amico con la 1.5.0); dado col colore di testa del gioco
+(la foto è venuta sfocata: il gioco aveva oscurato lo schermo); dado insieme a una foto della faccia e alla testa
+ingrandita da Faces; gli altri cappelli oltre al cilindro, orecchie e corna; il menu a tendina cliccato a mano.
