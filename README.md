@@ -121,6 +121,11 @@ Open the folder in Claude Code and ask for the change you want; the skills and n
 - Ideas and feature lists came from these mods, whose features were rebuilt inside the menu: **Big Voice** and
   **Big Visuals** by glarmer, **Big Solo Walk / Big Walk Solo Player**, and the **Cinematic Reshade** preset.
 
+## Licence
+
+[MIT](LICENSE) for the code in this repository. The bundled libraries and skills keep their own licences
+(see the notices above and `.claude/skills/LICENSE-universal-modder.txt`).
+
 Big Walk and its logo belong to [House House](https://househou.se/). This is an unofficial fan project, not
 affiliated with or endorsed by them; the logo above is loaded from the game's Steam page and is not part of
 this repository.
