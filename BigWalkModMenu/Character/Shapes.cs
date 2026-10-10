@@ -198,10 +198,10 @@ namespace BigWalk.ModMenu.Character
     {
         public static readonly string[] HatNames =
         {
-            "Nessuno", "Cilindro", "Cappello da festa", "Cappello da mago", "Bombetta", "Corona", "Aureola", "Antenna", "Cappellino",
+            "None", "Top hat", "Party hat", "Wizard hat", "Bowler", "Crown", "Halo", "Antenna", "Cap",
         };
 
-        public static readonly string[] AccessoryNames = { "Occhiali", "Baffi", "Orecchie", "Corna" };
+        public static readonly string[] AccessoryNames = { "Glasses", "Moustache", "Ears", "Horns" };
 
         private static Vector3 V(float x, float y, float z) => new Vector3(x, y, z);
         private static Vector3 U(float s) => new Vector3(s, s, s);

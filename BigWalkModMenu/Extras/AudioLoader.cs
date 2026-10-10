@@ -37,7 +37,7 @@ namespace BigWalk.ModMenu.Extras
                     case ".wav": return DecodeWav(path);
                     case ".ogg": return DecodeOgg(path);
                     case ".mp3": return DecodeMp3(path);
-                    default: return new Pcm { Error = "formato non supportato" };
+                    default: return new Pcm { Error = "unsupported format" };
                 }
             }
             catch (Exception ex)
@@ -66,7 +66,7 @@ namespace BigWalk.ModMenu.Extras
 
         private static Pcm ReadAll(int channels, int rate, Func<float[], int, int> read)
         {
-            if (channels <= 0 || rate <= 0) return new Pcm { Error = "file audio non valido" };
+            if (channels <= 0 || rate <= 0) return new Pcm { Error = "not a valid audio file" };
             long limit = (long)MaxSeconds * rate * channels;
             var chunks = new List<float[]>();
             var sizes = new List<int>();
@@ -94,7 +94,7 @@ namespace BigWalk.ModMenu.Extras
         private static Pcm DecodeWav(string path)
         {
             byte[] data = File.ReadAllBytes(path);
-            if (data.Length < 44 || data[0] != 'R' || data[1] != 'I' || data[2] != 'F' || data[3] != 'F') return new Pcm { Error = "non è un file WAV" };
+            if (data.Length < 44 || data[0] != 'R' || data[1] != 'I' || data[2] != 'F' || data[3] != 'F') return new Pcm { Error = "not a WAV file" };
 
             int format = 0, channels = 0, rate = 0, bits = 0;
             int pos = 12;
@@ -116,9 +116,9 @@ namespace BigWalk.ModMenu.Extras
                 }
                 else if (id == "data")
                 {
-                    if (channels <= 0 || rate <= 0) return new Pcm { Error = "WAV senza intestazione" };
+                    if (channels <= 0 || rate <= 0) return new Pcm { Error = "WAV without a header" };
                     int bytes = bits / 8;
-                    if (bytes <= 0) return new Pcm { Error = "WAV non supportato" };
+                    if (bytes <= 0) return new Pcm { Error = "unsupported WAV" };
                     int count = size / bytes;
                     count -= count % channels;
                     count = (int)Math.Min(count, (long)MaxSeconds * rate * channels);
@@ -131,13 +131,13 @@ namespace BigWalk.ModMenu.Extras
                         else if (format == 1 && bits == 8) samples[i] = (data[p] - 128) / 128f;
                         else if (format == 1 && bits == 24) samples[i] = ((data[p] | (data[p + 1] << 8) | ((sbyte)data[p + 2] << 16))) / 8388608f;
                         else if (format == 1 && bits == 32) samples[i] = BitConverter.ToInt32(data, p) / 2147483648f;
-                        else return new Pcm { Error = $"WAV non supportato (formato {format}, {bits} bit)" };
+                        else return new Pcm { Error = $"unsupported WAV (format {format}, {bits} bit)" };
                     }
                     return new Pcm { Samples = samples, Channels = channels, Rate = rate };
                 }
                 pos = body + size + (size & 1);
             }
-            return new Pcm { Error = "WAV senza dati" };
+            return new Pcm { Error = "WAV without data" };
         }
 
         /// <summary>Main thread only.</summary>

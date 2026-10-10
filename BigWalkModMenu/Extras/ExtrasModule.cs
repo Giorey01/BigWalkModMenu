@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace BigWalk.ModMenu.Extras
 {
-    [BepInPlugin("com.bigwalk.modmenu.extras", "Big Walk Mod Menu - Extra", ModMenuApi.Version)]
+    [BepInPlugin("com.bigwalk.modmenu.extras", "Big Walk Mod Menu - Extras", ModMenuApi.Version)]
     [BepInDependency(BigWalk.ModMenu.Plugin.Guid)]
     public class Plugin : BasePlugin
     {
@@ -22,11 +22,11 @@ namespace BigWalk.ModMenu.Extras
     public sealed class ExtrasModule : MenuModule
     {
         public override string Id => "extras";
-        public override string Title => "Extra";
+        public override string Title => "Extras";
         public override int Order => 60;
 
         private int _section;
-        private static readonly string[] Sections = { "Fumetti", "Emote", "Musica", "Suoni", "Diario" };
+        private static readonly string[] Sections = { "Bubbles", "Emotes", "Music", "Sounds", "Diary" };
 
         public override void Load(ModConfig c)
         {
@@ -63,7 +63,7 @@ namespace BigWalk.ModMenu.Extras
             Directory.CreateDirectory(StickerDir);
             if (!File.Exists(BubbleFile))
             {
-                File.WriteAllLines(BubbleFile, new[] { "Ciao!", "LOL", "?", "!", "Aspettatemi", "Seguitemi", "Di qua!", "Bravo!", "Ops", "<3", "zzz", "Foto!" });
+                File.WriteAllLines(BubbleFile, new[] { "Hi!", "LOL", "?", "!", "Wait for me", "Follow me", "This way!", "Nice!", "Oops", "<3", "zzz", "Photo!" });
             }
             LoadBubbleTexts();
 
@@ -162,7 +162,7 @@ namespace BigWalk.ModMenu.Extras
             for (int i = 0; i < 4; i++)
             {
                 PlayerCharacter pc = Solo.GetPlayerForSlot(i);
-                labels[i] = pc != null ? Game.PlayerLabel(pc, i) : $"Giocatore {i + 1} (assente)";
+                labels[i] = pc != null ? Game.PlayerLabel(pc, i) : $"Player {i + 1} (absent)";
             }
             return labels;
         }
@@ -187,8 +187,8 @@ namespace BigWalk.ModMenu.Extras
         private GUIStyle _bubbleStyle;
         private bool _bubbleStyleFailed;
 
-        private string BubbleFile => Path.Combine(DataPath, "fumetti.txt");
-        private string StickerDir => Path.Combine(DataPath, "adesivi");
+        private string BubbleFile => ModMenuApi.Renamed(DataPath, "bubbles.txt", "fumetti.txt");
+        private string StickerDir => ModMenuApi.Renamed(DataPath, "stickers", "adesivi");
 
         private void LoadBubbleTexts()
         {
@@ -201,7 +201,7 @@ namespace BigWalk.ModMenu.Extras
                     if (t.Length > 0) _bubbleTexts.Add(t);
                 }
             }
-            catch (Exception ex) { ModMenuApi.Log.LogWarning($"[Extras] fumetti.txt: {ex.Message}"); }
+            catch (Exception ex) { ModMenuApi.Log.LogWarning($"[Extras] bubbles.txt: {ex.Message}"); }
 
             _stickerFiles.Clear();
             try
@@ -286,15 +286,15 @@ namespace BigWalk.ModMenu.Extras
 
         private void DrawBubbleTab(Ui ui)
         {
-            ui.Header("Fumetto sopra la testa");
-            ui.Choice("Sopra", ref _bubbleSlot, SlotLabels());
+            ui.Header("Speech bubble over the head");
+            ui.Choice("Over", ref _bubbleSlot, SlotLabels());
             float seconds = _bubbleSeconds;
-            if (ui.Slider(seconds >= 60f ? "Durata: finché non lo togli" : $"Durata: {seconds:0} s", ref seconds, 2f, 60f, 1f))
+            if (ui.Slider(seconds >= 60f ? "Stays: until removed" : $"Stays: {seconds:0} s", ref seconds, 2f, 60f, 1f))
             {
                 _bubbleSeconds = seconds;
                 Dirty = true;
             }
-            if (ui.Button("Togli il fumetto"))
+            if (ui.Button("Remove the bubble"))
             {
                 _bubbles[_bubbleSlot] = null;
                 ShareBubble(_bubbleSlot, "");
@@ -310,7 +310,7 @@ namespace BigWalk.ModMenu.Extras
                 if (hit >= 0) SetBubble(_bubbleSlot, _bubbleTexts[i + hit], null);
             }
 
-            ui.Header($"Adesivi ({_stickerFiles.Count})");
+            ui.Header($"Stickers ({_stickerFiles.Count})");
             foreach (string file in _stickerFiles)
             {
                 if (!ui.Button(Path.GetFileNameWithoutExtension(file))) continue;
@@ -321,16 +321,16 @@ namespace BigWalk.ModMenu.Extras
                 }
                 if (tex != null) SetBubble(_bubbleSlot, "", tex);
             }
-            if (ui.Button("Rileggi testi e adesivi")) LoadBubbleTexts();
-            ui.Note("Testi: una riga ciascuno in extras/fumetti.txt. Adesivi: immagini PNG nella cartella extras/adesivi.", 2);
-            ui.Note("I testi sopra la tua testa li vedono anche gli amici con la mod. Adesivi e fumetti messi agli altri li vedi solo tu.", 2);
+            if (ui.Button("Reload texts and stickers")) LoadBubbleTexts();
+            ui.Note("Texts: one per line in extras/bubbles.txt. Stickers: PNG images in the folder extras/stickers.", 2);
+            ui.Note("Friends with the mod see the texts over your head too. Stickers, and bubbles put on other players, are seen only by you.", 2);
         }
 
         // =====================================================================
         // Emotes: short moves of the whole body
         // =====================================================================
 
-        private static readonly string[] EmoteNames = { "Giravolta", "Saltelli", "Capriola", "Tremarella", "Inchino", "Balletto" };
+        private static readonly string[] EmoteNames = { "Spin", "Hops", "Somersault", "Shivers", "Bow", "Dance" };
         private static readonly float[] EmoteSeconds = { 1.2f, 1.4f, 0.9f, 1.0f, 1.5f, 4.0f };
 
         private sealed class Emote
@@ -424,15 +424,15 @@ namespace BigWalk.ModMenu.Extras
 
         private void DrawEmoteTab(Ui ui)
         {
-            ui.Header("Emote");
-            ui.Choice("Chi", ref _emoteSlot, SlotLabels());
+            ui.Header("Emotes");
+            ui.Choice("Who", ref _emoteSlot, SlotLabels());
             for (int i = 0; i < EmoteNames.Length; i += 2)
             {
                 int hit = ui.Buttons(EmoteNames[i], EmoteNames[i + 1]);
                 if (hit >= 0) StartEmote(_emoteSlot, i + hit);
             }
-            ui.Note("Le tue le vedono anche gli amici con la mod; tu le vedi in selfie o terza persona. Quelle fatte fare agli altri le vedi solo tu.", 3);
-            ui.Header("Tasti rapidi (per te)");
+            ui.Note("Friends with the mod see yours too; you see them in selfie or third person. The ones you make others do are seen only by you.", 3);
+            ui.Header("Shortcuts (for yourself)");
             foreach (Hotkey k in _emoteKeys) if (ui.HotkeyRow(k)) Dirty = true;
         }
 
@@ -444,7 +444,7 @@ namespace BigWalk.ModMenu.Extras
         private readonly List<string> _tracks = new List<string>();
         private readonly List<string> _soundFiles = new List<string>();
         private readonly Dictionary<string, AudioClip> _soundClips = new Dictionary<string, AudioClip>();
-        private readonly Hotkey[] _soundKeys = MakeKeys("Sound", new[] { "Suono 1", "Suono 2", "Suono 3", "Suono 4", "Suono 5", "Suono 6" });
+        private readonly Hotkey[] _soundKeys = MakeKeys("Sound", new[] { "Sound 1", "Sound 2", "Sound 3", "Sound 4", "Sound 5", "Sound 6" });
         private readonly System.Random _random = new System.Random();
         private int _track = -1;
         private Task<Pcm> _loading;
@@ -453,8 +453,8 @@ namespace BigWalk.ModMenu.Extras
         private float _musicVolume = 0.5f, _soundVolume = 0.8f, _nextAudioScan;
         private AudioClip _musicClip;
 
-        private string MusicDir => Path.Combine(DataPath, "musica");
-        private string SoundDir => Path.Combine(DataPath, "suoni");
+        private string MusicDir => ModMenuApi.Renamed(DataPath, "music", "musica");
+        private string SoundDir => ModMenuApi.Renamed(DataPath, "sounds", "suoni");
 
         private bool EnsureAudio()
         {
@@ -495,7 +495,7 @@ namespace BigWalk.ModMenu.Extras
             _track = (index % _tracks.Count + _tracks.Count) % _tracks.Count;
             string path = _tracks[_track];
             _loadingName = Path.GetFileNameWithoutExtension(path);
-            _musicStatus = "Carico " + _loadingName + "…";
+            _musicStatus = "Loading " + _loadingName + "…";
             _music.Stop();
             _paused = false;
             _wasPlaying = false;
@@ -531,11 +531,11 @@ namespace BigWalk.ModMenu.Extras
 
             if (_loading != null && _loading.IsCompleted)
             {
-                Pcm pcm = _loading.Status == TaskStatus.RanToCompletion ? _loading.Result : new Pcm { Error = "errore di lettura" };
+                Pcm pcm = _loading.Status == TaskStatus.RanToCompletion ? _loading.Result : new Pcm { Error = "read error" };
                 _loading = null;
                 if (pcm.Error != null || pcm.Samples == null)
                 {
-                    _musicStatus = $"{_loadingName}: {pcm.Error ?? "vuoto"}";
+                    _musicStatus = $"{_loadingName}: {pcm.Error ?? "empty"}";
                     ModMenuApi.Log.LogWarning("[Extras] " + _musicStatus);
                 }
                 else
@@ -579,14 +579,14 @@ namespace BigWalk.ModMenu.Extras
 
         private void DrawMusicTab(Ui ui)
         {
-            ui.Header("Musica");
-            ui.Label(string.IsNullOrEmpty(_musicStatus) ? "Niente in riproduzione" : "♪ " + _musicStatus);
+            ui.Header("Music");
+            ui.Label(string.IsNullOrEmpty(_musicStatus) ? "Nothing playing" : "♪ " + _musicStatus);
             if (_music != null && _music.clip != null && _loading == null)
             {
                 float len = _music.clip.length, at = _music.time;
                 ui.Note($"{(int)at / 60}:{(int)at % 60:00} / {(int)len / 60}:{(int)len % 60:00}");
             }
-            int hit = ui.Buttons("⏮", _paused || _music == null || !_music.isPlaying ? "▶ Play" : "⏸ Pausa", "⏹ Stop", "⏭");
+            int hit = ui.Buttons("⏮", _paused || _music == null || !_music.isPlaying ? "▶ Play" : "⏸ Pause", "⏹ Stop", "⏭");
             if (hit == 0) NextTrack(-1);
             else if (hit == 3) NextTrack(1);
             else if (hit == 2 && _music != null) { _music.Stop(); _wasPlaying = false; _paused = false; _musicStatus = ""; }
@@ -597,28 +597,28 @@ namespace BigWalk.ModMenu.Extras
                 else { _music.UnPause(); if (!_music.isPlaying) _music.Play(); _paused = false; _wasPlaying = true; }
             }
             if (ui.Slider($"Volume: {Mathf.RoundToInt(_musicVolume * 100f)}%", ref _musicVolume, 0f, 1f, 0.05f)) Dirty = true;
-            if (ui.Toggle("Ordine casuale", ref _shuffle)) Dirty = true;
+            if (ui.Toggle("Shuffle", ref _shuffle)) Dirty = true;
 
-            ui.Header($"Brani ({_tracks.Count})");
+            ui.Header($"Tracks ({_tracks.Count})");
             for (int i = 0; i < _tracks.Count && i < 60; i++)
             {
                 string name = Path.GetFileNameWithoutExtension(_tracks[i]);
                 if (ui.Button(i == _track ? "<b>▶ " + name + "</b>" : name)) PlayTrack(i);
             }
-            ui.Note("Metti file MP3, OGG o WAV in BepInEx/plugins/BigWalkModMenu/extras/musica. La senti solo tu.", 2);
+            ui.Note("Put MP3, OGG or WAV files in BepInEx/plugins/BigWalkModMenu/extras/music. Only you hear it.", 2);
         }
 
         private void DrawSoundTab(Ui ui)
         {
-            ui.Header($"Suoni ({_soundFiles.Count})");
+            ui.Header($"Sounds ({_soundFiles.Count})");
             if (ui.Slider($"Volume: {Mathf.RoundToInt(_soundVolume * 100f)}%", ref _soundVolume, 0f, 1f, 0.05f)) Dirty = true;
             for (int i = 0; i < _soundFiles.Count && i < 40; i++)
             {
                 string name = Path.GetFileNameWithoutExtension(_soundFiles[i]);
                 if (ui.Button(i < _soundKeys.Length ? $"{i + 1}. {name}" : name)) PlaySound(_soundFiles[i]);
             }
-            ui.Note("Metti file brevi (WAV, OGG, MP3) in extras/suoni. Li senti solo tu: non passano dal microfono.", 2);
-            ui.Header("Tasti rapidi (primi 6 suoni)");
+            ui.Note("Put short files (WAV, OGG, MP3) in extras/sounds. Only you hear them: they do not go through the microphone.", 2);
+            ui.Header("Shortcuts (first 6 sounds)");
             foreach (Hotkey k in _soundKeys) if (ui.HotkeyRow(k)) Dirty = true;
         }
 
@@ -690,8 +690,8 @@ namespace BigWalk.ModMenu.Extras
             _inSession = false;
             try
             {
-                string file = Path.Combine(DataPath, "diario.csv");
-                if (!File.Exists(file)) File.WriteAllText(file, "inizio;minuti;metri;passi_stimati;velocita_massima_ms;dislivello_m\n");
+                string file = ModMenuApi.Renamed(DataPath, "diary.csv", "diario.csv");
+                if (!File.Exists(file)) File.WriteAllText(file, "start;minutes;metres;estimated_steps;top_speed_ms;height_range_m\n");
                 var c = CultureInfo.InvariantCulture;
                 File.AppendAllText(file, string.Join(";", _sessionStart.ToString("yyyy-MM-dd HH:mm"), (_seconds / 60f).ToString("0.0", c),
                     _distance.ToString("0", c), Mathf.RoundToInt(_distance / StepLength).ToString(c), _topSpeed.ToString("0.0", c), (_highest - _lowest).ToString("0", c)) + "\n");
@@ -714,19 +714,19 @@ namespace BigWalk.ModMenu.Extras
 
         private void DrawDiaryTab(Ui ui)
         {
-            ui.Header("Questa camminata");
-            if (!_inSession) ui.Note("Parte quando entri in partita.");
-            ui.Label($"Distanza: <b>{Metres(_distance)}</b>   Passi (stimati): <b>{Mathf.RoundToInt(_distance / StepLength)}</b>");
-            ui.Label($"Tempo: <b>{Duration(_seconds)}</b>   Media: {(_seconds > 1f ? _distance / _seconds * 3.6f : 0f):0.0} km/h");
-            ui.Label($"Velocità massima: {_topSpeed * 3.6f:0.0} km/h   Dislivello: {_highest - _lowest:0} m");
+            ui.Header("This walk");
+            if (!_inSession) ui.Note("Starts when you join a walk.");
+            ui.Label($"Distance: <b>{Metres(_distance)}</b>   Steps (estimated): <b>{Mathf.RoundToInt(_distance / StepLength)}</b>");
+            ui.Label($"Time: <b>{Duration(_seconds)}</b>   Average: {(_seconds > 1f ? _distance / _seconds * 3.6f : 0f):0.0} km/h");
+            ui.Label($"Top speed: {_topSpeed * 3.6f:0.0} km/h   Height range: {_highest - _lowest:0} m");
 
-            ui.Header("Percorso");
+            ui.Header("Route");
             DrawPath(ui.Reserve(ui.Width * 0.7f));
 
-            ui.Header("In totale");
-            ui.Label($"Distanza: <b>{Metres(_totalDistance + _distance)}</b>   Tempo: <b>{Duration(_totalSeconds + _seconds)}</b>");
-            ui.Label($"Camminate: {_totalSessions}");
-            ui.Note("Ogni camminata finita viene aggiunta a extras/diario.csv.");
+            ui.Header("In total");
+            ui.Label($"Distance: <b>{Metres(_totalDistance + _distance)}</b>   Time: <b>{Duration(_totalSeconds + _seconds)}</b>");
+            ui.Label($"Walks: {_totalSessions}");
+            ui.Note("Every finished walk is added to extras/diary.csv.");
         }
 
         private void DrawPath(Rect area)
@@ -756,7 +756,7 @@ namespace BigWalk.ModMenu.Extras
             Vector2 first = _path[0], last = _path[_path.Count - 1];
             Ui.Tint(new Rect(ox + (first.x - minX) * scale - 3f, oy + (maxY - first.y) * scale - 3f, 6f, 6f), new Color(0.4f, 1f, 0.4f, 1f));
             Ui.Tint(new Rect(ox + (last.x - minX) * scale - 3f, oy + (maxY - last.y) * scale - 3f, 6f, 6f), new Color(1f, 0.4f, 0.3f, 1f));
-            GUI.Label(new Rect(area.x + 4f, area.yMax - 16f, area.width, 16f), $"<size=10>verde: partenza • rosso: tu • lato {span:0} m</size>");
+            GUI.Label(new Rect(area.x + 4f, area.yMax - 16f, area.width, 16f), $"<size=10>green: start • red: you • side {span:0} m</size>");
         }
     }
 }

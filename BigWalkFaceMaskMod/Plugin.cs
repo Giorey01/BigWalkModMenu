@@ -20,7 +20,7 @@ using UnityEngine;
 
 namespace BigWalk.FaceMaskMod
 {
-    [BepInPlugin("com.antigravity.facemaskmod", "Big Walk Face Mask Mod", "3.2.0")]
+    [BepInPlugin("com.antigravity.facemaskmod", "Big Walk Face Mask Mod", "3.3.0")]
     [BepInDependency(BigWalk.ModMenu.Plugin.Guid)]
     public class Plugin : BasePlugin
     {
@@ -42,7 +42,7 @@ namespace BigWalk.FaceMaskMod
         public override void Load()
         {
             LogSource = Log;
-            LogSource.LogInfo("Big Walk Face Mask Mod 3.2.0 is loading...");
+            LogSource.LogInfo("Big Walk Face Mask Mod 3.3.0 is loading...");
 
             PluginPath = Path.Combine(Paths.PluginPath, "FaceMaskMod");
             DefaultFacesDirectory = Path.Combine(PluginPath, "faces");
@@ -58,13 +58,13 @@ namespace BigWalk.FaceMaskMod
         }
     }
 
-    /// <summary>The "Facce" tab of the mod menu.</summary>
+    /// <summary>The "Faces" tab of the mod menu.</summary>
     public sealed class FacesModule : MenuModule
     {
         private readonly FaceMaskBehaviour _faces = new FaceMaskBehaviour();
 
         public override string Id => "faces";
-        public override string Title => "Facce";
+        public override string Title => "Faces";
         public override int Order => 10;
 
         private readonly FolderPicker _picker = new FolderPicker();
@@ -93,7 +93,7 @@ namespace BigWalk.FaceMaskMod
 
         private void DrawFolder(Ui ui)
         {
-            ui.Header("Cartella delle foto");
+            ui.Header("Photo folder");
             if (_picker.IsOpen)
             {
                 string chosen = _picker.Draw(ui);
@@ -101,12 +101,12 @@ namespace BigWalk.FaceMaskMod
                 return;
             }
             ui.Note(Plugin.FacesDirectory, 2);
-            if (_folderMissing) ui.Note("<color=#ffaa66>La cartella scelta non c'è più: sto usando quella della mod.</color>");
-            int hit = ui.Buttons("Cambia…", "Quella della mod", "Apri");
+            if (_folderMissing) ui.Note("<color=#ffaa66>The chosen folder is gone: using the mod's own folder.</color>");
+            int hit = ui.Buttons("Change…", "The mod's own", "Open");
             if (hit == 0) _picker.Open(Plugin.FacesDirectory);
             else if (hit == 1) SetFolder("");
             else if (hit == 2) _faces.OpenFacesFolder();
-            ui.Note($"{Math.Max(0, FaceManager.AvailableFaces.Count - 1)} foto (.png o .jpg). Puoi tenerle dove vuoi, anche fuori dal gioco.");
+            ui.Note($"{Math.Max(0, FaceManager.AvailableFaces.Count - 1)} photos (.png or .jpg). Keep them wherever you like, outside the game too.");
         }
 
         public override void Update()
@@ -155,7 +155,7 @@ namespace BigWalk.FaceMaskMod
 
     public static class FaceManager
     {
-        public const string NoneFace = "<Nessuna>";
+        public const string NoneFace = "<None>";
         public const int BakeSize = 768;
         public const int PreviewSize = 256;
         // The baked texture covers angles up to BakeExtent * 90 degrees away from the front of the head.
@@ -1069,17 +1069,17 @@ namespace BigWalk.FaceMaskMod
             FaceEntry face = FaceManager.GetFace(GetSlotFace(_editSlot));
             if (face == null)
             {
-                GUI.Label(new Rect(x, y + 4f, width, 40f), $"Player {_editSlot + 1}: nessuna faccia assegnata.\nScegline una qui sopra per regolarla.");
+                GUI.Label(new Rect(x, y + 4f, width, 40f), $"Player {_editSlot + 1}: no face assigned.\nPick one above to adjust it.");
                 return;
             }
 
             FaceSettings s = face.Settings;
-            GUI.Label(new Rect(x, y, width, 18f), $"<b>Regolazione:</b> {face.Name} (Player {_editSlot + 1})");
+            GUI.Label(new Rect(x, y, width, 18f), $"<b>Adjusting:</b> {face.Name} (Player {_editSlot + 1})");
 
             float zoom = SliderRow(x, y + 20f, width, $"Zoom: {Mathf.RoundToInt(s.Zoom * 100f)}%", s.Zoom, 0.4f, 3.0f, 0.05f);
-            float cx = SliderRow(x, y + 58f, width, $"Sposta orizzontale: {Mathf.RoundToInt((s.CenterX - 0.5f) * 100f):+0;-0;0}", s.CenterX, 0f, 1f, 0.01f);
-            float cy = SliderRow(x, y + 96f, width, $"Sposta verticale: {Mathf.RoundToInt((s.CenterY - 0.5f) * 100f):+0;-0;0}", s.CenterY, 0f, 1f, 0.01f);
-            float wrap = SliderRow(x, y + 134f, width, $"Avvolgimento ai lati: {Mathf.RoundToInt(s.Wrap * 100f)}%", s.Wrap, 0f, 1f, 0.05f);
+            float cx = SliderRow(x, y + 58f, width, $"Move sideways: {Mathf.RoundToInt((s.CenterX - 0.5f) * 100f):+0;-0;0}", s.CenterX, 0f, 1f, 0.01f);
+            float cy = SliderRow(x, y + 96f, width, $"Move up/down: {Mathf.RoundToInt((s.CenterY - 0.5f) * 100f):+0;-0;0}", s.CenterY, 0f, 1f, 0.01f);
+            float wrap = SliderRow(x, y + 134f, width, $"Wrap around the sides: {Mathf.RoundToInt(s.Wrap * 100f)}%", s.Wrap, 0f, 1f, 0.05f);
             if (zoom != s.Zoom || cx != s.CenterX || cy != s.CenterY || wrap != s.Wrap)
             {
                 s.Zoom = zoom; s.CenterX = cx; s.CenterY = cy; s.Wrap = wrap;
@@ -1087,12 +1087,12 @@ namespace BigWalk.FaceMaskMod
             }
 
             float half = (width - 4f) * 0.5f;
-            if (GUI.Button(new Rect(x, y + 172f, half, 18f), s.Mirror ? "Specchia: <b>ON</b>" : "Specchia: OFF"))
+            if (GUI.Button(new Rect(x, y + 172f, half, 18f), s.Mirror ? "Mirror: <b>ON</b>" : "Mirror: OFF"))
             {
                 s.Mirror = !s.Mirror;
                 Touch(face);
             }
-            if (GUI.Button(new Rect(x + half + 4f, y + 172f, half, 18f), "Ripristina regolazione"))
+            if (GUI.Button(new Rect(x + half + 4f, y + 172f, half, 18f), "Reset adjustment"))
             {
                 face.Settings = new FaceSettings { HasFill = s.HasFill, Fill = s.Fill };
                 Touch(face);
@@ -1102,7 +1102,7 @@ namespace BigWalk.FaceMaskMod
         private void DrawTorsoTab(float x, float y, float width)
         {
             int slot = _editSlot;
-            GUI.Label(new Rect(x, y, width, 18f), $"<b>Stampa sul busto di Player {slot + 1}</b>");
+            GUI.Label(new Rect(x, y, width, 18f), $"<b>Print on the torso of Player {slot + 1}</b>");
 
             var names = FaceManager.AvailableFaces;
             string current = GlobalSettings.TorsoFace[slot];
@@ -1119,9 +1119,9 @@ namespace BigWalk.FaceMaskMod
             }
 
             GUI.Label(new Rect(x, y + 52f, width, 110f),
-                "<size=11><color=#dddddd>Avvolge un'immagine della cartella <b>faces</b> sulla sfera del busto, come per la testa.\n\n" +
-                "Zoom, spostamento e avvolgimento sono quelli dell'immagine: si regolano nella scheda Faccia assegnandola un attimo a una testa.\n\n" +
-                "Appare appena il personaggio guarda dritto davanti a s\u00e9.</color></size>");
+                "<size=11><color=#dddddd>Wraps a picture from the photo folder around the torso sphere, as for the head.\n\n" +
+                "Zoom, position and wrap are the picture's own: adjust them in the Face section by assigning it to a head for a moment.\n\n" +
+                "It shows as soon as the character looks straight ahead.</color></size>");
         }
 
         private static void DrawSwatch(Rect rect, Color colour)
@@ -1163,7 +1163,7 @@ namespace BigWalk.FaceMaskMod
         {
             int slot = _editSlot;
             bool changed = false;
-            GUI.Label(new Rect(x, y, width, 18f), $"<b>Naso di Player {slot + 1}</b>");
+            GUI.Label(new Rect(x, y, width, 18f), $"<b>Nose of Player {slot + 1}</b>");
 
             // Colour wheel.
             const float wheelSize = 104f;
@@ -1195,17 +1195,17 @@ namespace BigWalk.FaceMaskMod
 
             // Controls to the right of the wheel.
             float rx = x + wheelSize + 10f, rw = width - wheelSize - 10f;
-            if (GUI.Button(new Rect(rx, y + 20f, rw, 20f), GlobalSettings.NoseVisible[slot] ? "Naso originale: <b>visibile</b>" : "Naso originale: nascosto"))
+            if (GUI.Button(new Rect(rx, y + 20f, rw, 20f), GlobalSettings.NoseVisible[slot] ? "Original nose: <b>visible</b>" : "Original nose: hidden"))
             {
                 GlobalSettings.NoseVisible[slot] = !GlobalSettings.NoseVisible[slot];
                 changed = true;
             }
-            if (GUI.Button(new Rect(rx, y + 43f, rw, 20f), GlobalSettings.NoseCustomColour[slot] ? "Colore: <b>personalizzato</b>" : "Colore: originale"))
+            if (GUI.Button(new Rect(rx, y + 43f, rw, 20f), GlobalSettings.NoseCustomColour[slot] ? "Colour: <b>custom</b>" : "Colour: original"))
             {
                 GlobalSettings.NoseCustomColour[slot] = !GlobalSettings.NoseCustomColour[slot];
                 changed = true;
             }
-            float value = SliderRow(rx, y + 66f, rw, $"Luminosit\u00e0: {Mathf.RoundToInt(GlobalSettings.NoseValue[slot] * 100f)}%", GlobalSettings.NoseValue[slot], 0f, 1f, 0.05f);
+            float value = SliderRow(rx, y + 66f, rw, $"Brightness: {Mathf.RoundToInt(GlobalSettings.NoseValue[slot] * 100f)}%", GlobalSettings.NoseValue[slot], 0f, 1f, 0.05f);
             if (value != GlobalSettings.NoseValue[slot])
             {
                 GlobalSettings.NoseValue[slot] = value;
@@ -1215,7 +1215,7 @@ namespace BigWalk.FaceMaskMod
             DrawSwatch(new Rect(rx, y + 106f, rw, 16f), GlobalSettings.NoseColour(slot));
 
             // Head size, shared by every player.
-            float scale = SliderRow(x, y + 130f, width - 52f, $"Grandezza testa (tutti): {Mathf.RoundToInt(GlobalSettings.HeadScale * 100f)}%", GlobalSettings.HeadScale, 0.3f, 4f, 0.05f);
+            float scale = SliderRow(x, y + 130f, width - 52f, $"Head size (everyone): {Mathf.RoundToInt(GlobalSettings.HeadScale * 100f)}%", GlobalSettings.HeadScale, 0.3f, 4f, 0.05f);
             if (GUI.Button(new Rect(x + width - 48f, y + 130f, 48f, 18f), "100%")) scale = 1f;
             if (scale != GlobalSettings.HeadScale)
             {
@@ -1231,7 +1231,7 @@ namespace BigWalk.FaceMaskMod
             }
         }
 
-        // Drawn inside the mod menu's "Facce" tab. The layout is the one of the old stand-alone panel,
+        // Drawn inside the mod menu's "Faces" tab. The layout is the one of the old stand-alone panel,
         // which had a 22 px title bar and 8 px margins around its content.
         public void Draw(Ui ui)
         {
@@ -1239,7 +1239,7 @@ namespace BigWalk.FaceMaskMod
             float panelX = ui.X - 8f;
             float panelY = ui.Y - 22f;
 
-            GUI.Label(new Rect(panelX + 14f, panelY + 22f, panelW - 28f, 20f), "<b>Scegli la faccia per ogni giocatore:</b>");
+            GUI.Label(new Rect(panelX + 14f, panelY + 22f, panelW - 28f, 20f), "<b>Pick a face for each player:</b>");
 
             for (int i = 0; i < 4; i++)
             {
@@ -1248,8 +1248,8 @@ namespace BigWalk.FaceMaskMod
 
                 var pc = Solo.GetPlayerForSlot(i);
                 string status = pc != null
-                    ? (pc.isLocalPlayer ? "<color=#88ff88>(Attivo)</color>" : "<color=#ffff88>(Follower)</color>")
-                    : "<color=#aaaaaa>(Non spawnato)</color>";
+                    ? (pc.isLocalPlayer ? "<color=#88ff88>(Active)</color>" : "<color=#ffff88>(Follower)</color>")
+                    : "<color=#aaaaaa>(Not spawned)</color>";
                 GUI.Label(new Rect(panelX + 14f, rowY + 1f, 220f, 18f), $"<b>Player {i + 1}</b> {status}");
 
                 if (GUI.Button(new Rect(panelX + 14f, rowY + 18f, 24f, 19f), "<")) CycleSlotFace(i, -1);
@@ -1262,7 +1262,7 @@ namespace BigWalk.FaceMaskMod
 
                 if (GUI.Button(new Rect(panelX + 212f, rowY + 18f, 24f, 19f), ">")) CycleSlotFace(i, 1);
 
-                string editLabel = _editSlot == i ? "<b>Regola ●</b>" : "Regola";
+                string editLabel = _editSlot == i ? "<b>Adjust ●</b>" : "Adjust";
                 if (GUI.Button(new Rect(panelX + 242f, rowY + 18f, panelW - 256f, 19f), editLabel)) _editSlot = i;
             }
 
@@ -1272,21 +1272,21 @@ namespace BigWalk.FaceMaskMod
             float half = (innerW - 4f) * 0.5f;
             float third = (innerW - 8f) / 3f;
             GUI.Box(new Rect(panelX + 8f, adjY, panelW - 16f, 240f), "");
-            if (GUI.Button(new Rect(innerX, adjY + 3f, third, 20f), _tab == 0 ? "<b>[ Faccia ]</b>" : "Faccia")) _tab = 0;
-            if (GUI.Button(new Rect(innerX + third + 4f, adjY + 3f, third, 20f), _tab == 1 ? "<b>[ Naso e testa ]</b>" : "Naso e testa")) _tab = 1;
-            if (GUI.Button(new Rect(innerX + (third + 4f) * 2f, adjY + 3f, third, 20f), _tab == 2 ? "<b>[ Busto ]</b>" : "Busto")) _tab = 2;
+            if (GUI.Button(new Rect(innerX, adjY + 3f, third, 20f), _tab == 0 ? "<b>[ Face ]</b>" : "Face")) _tab = 0;
+            if (GUI.Button(new Rect(innerX + third + 4f, adjY + 3f, third, 20f), _tab == 1 ? "<b>[ Nose and head ]</b>" : "Nose and head")) _tab = 1;
+            if (GUI.Button(new Rect(innerX + (third + 4f) * 2f, adjY + 3f, third, 20f), _tab == 2 ? "<b>[ Torso ]</b>" : "Torso")) _tab = 2;
 
             if (_tab == 0) DrawFaceTab(innerX, adjY + 26f, innerW);
             else if (_tab == 1) DrawNoseTab(innerX, adjY + 26f, innerW);
             else DrawTorsoTab(innerX, adjY + 26f, innerW);
 
             float orientY = adjY + 218f;
-            if (GUI.Button(new Rect(innerX, orientY, half, 18f), $"Gira faccia 90\u00b0 ({(YawSteps & 3) * 90})"))
+            if (GUI.Button(new Rect(innerX, orientY, half, 18f), $"Turn face 90\u00b0 ({(YawSteps & 3) * 90})"))
             {
                 YawSteps++;
                 ApplyAssignedFaces();
             }
-            if (GUI.Button(new Rect(innerX + half + 4f, orientY, half, 18f), $"Ruota faccia 90\u00b0 ({(RollSteps & 3) * 90})"))
+            if (GUI.Button(new Rect(innerX + half + 4f, orientY, half, 18f), $"Roll face 90\u00b0 ({(RollSteps & 3) * 90})"))
             {
                 RollSteps++;
                 ApplyAssignedFaces();
@@ -1294,18 +1294,18 @@ namespace BigWalk.FaceMaskMod
 
             float toolY = adjY + 246f;
             float toolW = (panelW - 20f) * 0.5f;
-            if (GUI.Button(new Rect(panelX + 8f, toolY, toolW, 22f), "Rileggi le foto"))
+            if (GUI.Button(new Rect(panelX + 8f, toolY, toolW, 22f), "Reload photos"))
             {
                 FaceManager.ReloadFaces();
                 ApplyAssignedFaces();
             }
-            if (GUI.Button(new Rect(panelX + 12f + toolW, toolY, toolW, 22f), "Apri la cartella"))
+            if (GUI.Button(new Rect(panelX + 12f + toolW, toolY, toolW, 22f), "Open the folder"))
             {
                 OpenFacesFolder();
             }
 
             GUI.Label(new Rect(panelX + 10f, toolY + 24f, panelW - 20f, 36f),
-                "<size=10><color=#dddddd>Metti .png/.jpg nella cartella delle foto (qui sopra). Le regolazioni si salvano alla chiusura del menu.</color></size>");
+                "<size=10><color=#dddddd>Put .png/.jpg files in the photo folder (above). Adjustments are saved when the menu closes.</color></size>");
 
             DrawDropdown(panelX, panelY);
 

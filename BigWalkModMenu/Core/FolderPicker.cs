@@ -57,7 +57,7 @@ namespace BigWalk.ModMenu
             }
             catch (Exception ex)
             {
-                _problem = "Non posso leggere questa cartella: " + ex.Message;
+                _problem = "Cannot read this folder: " + ex.Message;
             }
         }
 
@@ -67,8 +67,8 @@ namespace BigWalk.ModMenu
             if (!IsOpen) return null;
             if (!_listed) List();
 
-            ui.Label(_path.Length == 0 ? "<b>Dischi</b>" : "<b>" + _path + "</b>", 2);
-            int nav = ui.Buttons("↑ Su", "Dischi", "Incolla percorso");
+            ui.Label(_path.Length == 0 ? "<b>Drives</b>" : "<b>" + _path + "</b>", 2);
+            int nav = ui.Buttons("↑ Up", "Drives", "Paste path");
             if (nav == 0 && _path.Length > 0)
             {
                 string parent = null;
@@ -82,18 +82,18 @@ namespace BigWalk.ModMenu
                 string pasted = "";
                 try { pasted = (GUIUtility.systemCopyBuffer ?? "").Trim().Trim('"'); } catch { }
                 if (pasted.Length > 0 && Directory.Exists(pasted)) Go(pasted);
-                else _problem = "Negli appunti non c'è il percorso di una cartella che esiste.";
+                else _problem = "The clipboard does not hold the path of an existing folder.";
                 return null;
             }
 
             if (_problem != null) ui.Note("<color=#ff8888>" + _problem + "</color>", 2);
             if (_path.Length > 0)
             {
-                int pick = ui.Buttons("Usa questa cartella", "Annulla");
+                int pick = ui.Buttons("Use this folder", "Cancel");
                 if (pick == 0) { IsOpen = false; return _path; }
                 if (pick == 1) { IsOpen = false; return null; }
             }
-            else if (ui.Button("Annulla")) { IsOpen = false; return null; }
+            else if (ui.Button("Cancel")) { IsOpen = false; return null; }
 
             int shown = Math.Min(_children.Count, MaxShown);
             for (int i = 0; i < shown; i++)
@@ -102,8 +102,8 @@ namespace BigWalk.ModMenu
                 string name = _path.Length == 0 ? child : Path.GetFileName(child);
                 if (ui.Button("▸ " + name)) { Go(child); return null; }
             }
-            if (_children.Count > shown) ui.Note($"…e altre {_children.Count - shown}: restringi entrando in una cartella, o incolla il percorso.");
-            if (_children.Count == 0 && _problem == null) ui.Note("Nessuna sottocartella qui.");
+            if (_children.Count > shown) ui.Note($"…and {_children.Count - shown} more: open a folder to narrow it down, or paste the path.");
+            if (_children.Count == 0 && _problem == null) ui.Note("No sub-folders here.");
             return null;
         }
     }

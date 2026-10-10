@@ -11,7 +11,7 @@ using UnityEngine.Rendering.Universal;
 
 namespace BigWalk.ModMenu.World
 {
-    [BepInPlugin("com.bigwalk.modmenu.world", "Big Walk Mod Menu - Mondo", ModMenuApi.Version)]
+    [BepInPlugin("com.bigwalk.modmenu.world", "Big Walk Mod Menu - World", ModMenuApi.Version)]
     [BepInDependency(BigWalk.ModMenu.Plugin.Guid)]
     public class Plugin : BasePlugin
     {
@@ -70,7 +70,7 @@ namespace BigWalk.ModMenu.World
     public sealed class WorldModule : MenuModule
     {
         public override string Id => "world";
-        public override string Title => "Mondo";
+        public override string Title => "World";
         public override int Order => 50;
 
         // Time of day.
@@ -108,22 +108,22 @@ namespace BigWalk.ModMenu.World
             string Pct(float v) => Mathf.RoundToInt(v * 100f) + "%";
             Func<float, float, string> pct = (v, e) => Pct(v);
 
-            _knobs.Add(new Knob("Fog", "Nebbia", 0f, 8f, 0.1f, 1f, true,
+            _knobs.Add(new Knob("Fog", "Fog", 0f, 8f, 0.1f, 1f, true,
                 () => { var e = Env; return e != null && e.Fog != null ? e.Fog.customFogDensityModifer : float.NaN; },
                 v => Env.Fog.customFogDensityModifer = v, pct));
-            _knobs.Add(new Knob("Sun", "Luce del sole e della luna", 0f, 4f, 0.05f, 1f, true,
+            _knobs.Add(new Knob("Sun", "Sun and moon light", 0f, 4f, 0.05f, 1f, true,
                 () => { var e = Env; return e != null && e.Lighting != null && e.Lighting.Settings != null ? e.Lighting.Settings.directLightIntensityModifier : float.NaN; },
                 v => Env.Lighting.Settings.directLightIntensityModifier = v, pct));
-            _knobs.Add(new Knob("Ambient", "Luce ambiente", 0f, 4f, 0.05f, 1f, true,
+            _knobs.Add(new Knob("Ambient", "Ambient light", 0f, 4f, 0.05f, 1f, true,
                 () => { var e = Env; return e != null && e.Lighting != null && e.Lighting.Settings != null ? e.Lighting.Settings.ambientIntensityModifier : float.NaN; },
                 v => Env.Lighting.Settings.ambientIntensityModifier = v, pct));
-            _knobs.Add(new Knob("SkyIntensity", "Luminosità del cielo", 0f, 4f, 0.05f, 1f, true,
+            _knobs.Add(new Knob("SkyIntensity", "Sky brightness", 0f, 4f, 0.05f, 1f, true,
                 () => { var e = Env; return e != null && e.Sky != null && e.Sky.Settings != null ? e.Sky.Settings.intensity : float.NaN; },
                 v => Env.Sky.Settings.intensity = v, pct));
-            _knobs.Add(new Knob("SunScale", "Grandezza del sole", 0.2f, 15f, 0.1f, 1f, true,
+            _knobs.Add(new Knob("SunScale", "Sun size", 0.2f, 15f, 0.1f, 1f, true,
                 () => { var e = Env; return e != null && e.Sky != null && e.Sky.Settings != null ? e.Sky.Settings.sunScale : float.NaN; },
                 v => Env.Sky.Settings.sunScale = v, pct));
-            _knobs.Add(new Knob("MoonScale", "Grandezza della luna", 0.2f, 15f, 0.1f, 1f, true,
+            _knobs.Add(new Knob("MoonScale", "Moon size", 0.2f, 15f, 0.1f, 1f, true,
                 () => { var e = Env; return e != null && e.Sky != null && e.Sky.Settings != null ? e.Sky.Settings.moonScale : float.NaN; },
                 v => Env.Sky.Settings.moonScale = v, pct));
         }
@@ -348,7 +348,7 @@ namespace BigWalk.ModMenu.World
 
         // ---- menu ----
 
-        private static readonly string[] PresetNames = { "Nessuno", "Bianco e nero", "Seppia", "Vintage", "VHS", "Sogno", "Caldo", "Freddo", "Vivace" };
+        private static readonly string[] PresetNames = { "None", "Black & white", "Sepia", "Vintage", "VHS", "Dream", "Warm", "Cool", "Vivid" };
 
         private void Preset(int index)
         {
@@ -373,32 +373,32 @@ namespace BigWalk.ModMenu.World
         {
             bool changed = false;
 
-            ui.Header("Ora del giorno");
+            ui.Header("Time of day");
             float now = -1f;
             try { now = SkyManager.GetCurrentTime(); } catch { }
-            ui.Label(now >= 0f ? $"Ora del gioco adesso: {now:0.00}" : "Ora del gioco: non disponibile");
-            changed |= ui.Toggle("Ferma l'ora", ref _fixTime);
+            ui.Label(now >= 0f ? $"Game time now: {now:0.00}" : "Game time: not available");
+            changed |= ui.Toggle("Freeze the time", ref _fixTime);
             if (_fixTime)
             {
-                changed |= ui.Slider($"Ora: {_time:0.0}", ref _time, 0f, 24f, 0.25f);
-                int hit = ui.Buttons("Alba", "Mezzogiorno", "Tramonto", "Notte");
+                changed |= ui.Slider($"Time: {_time:0.0}", ref _time, 0f, 24f, 0.25f);
+                int hit = ui.Buttons("Dawn", "Noon", "Sunset", "Night");
                 if (hit >= 0)
                 {
                     _time = new[] { 6f, 12f, 18.5f, 0f }[hit];
                     changed = true;
                 }
             }
-            ui.Note("La vedi solo tu: gli altri giocatori restano con l'ora vera.");
+            ui.Note("Only you see it: other players keep the real time.");
 
-            ui.Header("Cielo, luce e nebbia");
+            ui.Header("Sky, light and fog");
             foreach (Knob k in _knobs)
             {
-                if (k.Broken) { ui.Note(k.Label + ": non disponibile"); continue; }
+                if (k.Broken) { ui.Note(k.Label + ": not available"); continue; }
                 changed |= ui.Toggle(k.Label, ref k.On);
                 if (k.On) changed |= ui.Slider("   " + k.Format(k.Value, k.Effective), ref k.Value, k.Min, k.Max, k.Step);
             }
 
-            ui.Header("Filtro");
+            ui.Header("Filter");
             int row = 0;
             while (row < PresetNames.Length)
             {
@@ -412,20 +412,20 @@ namespace BigWalk.ModMenu.World
 
             FilterSettings f = _filter;
             bool fc = false;
-            fc |= ui.Slider($"Esposizione: {f.Exposure:+0.00;-0.00;0}", ref f.Exposure, -3f, 3f, 0.05f);
-            fc |= ui.Slider($"Contrasto: {f.Contrast:+0;-0;0}", ref f.Contrast, -100f, 100f, 1f);
-            fc |= ui.Slider($"Saturazione: {f.Saturation:+0;-0;0}", ref f.Saturation, -100f, 100f, 1f);
-            fc |= ui.Slider($"Tonalità: {f.Hue:+0;-0;0}°", ref f.Hue, -180f, 180f, 1f);
-            fc |= ui.Slider($"Temperatura: {f.Temperature:+0;-0;0}", ref f.Temperature, -100f, 100f, 1f);
-            fc |= ui.Slider($"Tinta: {f.Tint:+0;-0;0}", ref f.Tint, -100f, 100f, 1f);
-            fc |= ui.Slider($"Seppia: {Mathf.RoundToInt(f.Sepia * 100f)}%", ref f.Sepia, 0f, 1f, 0.05f);
-            fc |= ui.Slider($"Vignetta: {Mathf.RoundToInt(f.Vignette * 100f)}%", ref f.Vignette, 0f, 1f, 0.05f);
-            fc |= ui.Slider($"Grana: {Mathf.RoundToInt(f.Grain * 100f)}%", ref f.Grain, 0f, 1f, 0.05f);
-            fc |= ui.Slider($"Aberrazione cromatica: {Mathf.RoundToInt(f.Aberration * 100f)}%", ref f.Aberration, 0f, 1f, 0.05f);
-            fc |= ui.Slider($"Distorsione della lente: {f.Distortion:+0.00;-0.00;0}", ref f.Distortion, -1f, 1f, 0.02f);
-            fc |= ui.Toggle("Righe da vecchio televisore", ref f.Scanlines);
-            ui.Note("Grana, aberrazione e distorsione funzionano solo se il gioco ne contiene gli shader: se non vedi differenze, non ci sono.", 2);
-            if (_volumeFailed) ui.Note("<color=#ff8888>Il filtro non è riuscito a partire (vedi log).</color>");
+            fc |= ui.Slider($"Exposure: {f.Exposure:+0.00;-0.00;0}", ref f.Exposure, -3f, 3f, 0.05f);
+            fc |= ui.Slider($"Contrast: {f.Contrast:+0;-0;0}", ref f.Contrast, -100f, 100f, 1f);
+            fc |= ui.Slider($"Saturation: {f.Saturation:+0;-0;0}", ref f.Saturation, -100f, 100f, 1f);
+            fc |= ui.Slider($"Hue: {f.Hue:+0;-0;0}°", ref f.Hue, -180f, 180f, 1f);
+            fc |= ui.Slider($"Temperature: {f.Temperature:+0;-0;0}", ref f.Temperature, -100f, 100f, 1f);
+            fc |= ui.Slider($"Tint: {f.Tint:+0;-0;0}", ref f.Tint, -100f, 100f, 1f);
+            fc |= ui.Slider($"Sepia: {Mathf.RoundToInt(f.Sepia * 100f)}%", ref f.Sepia, 0f, 1f, 0.05f);
+            fc |= ui.Slider($"Vignette: {Mathf.RoundToInt(f.Vignette * 100f)}%", ref f.Vignette, 0f, 1f, 0.05f);
+            fc |= ui.Slider($"Grain: {Mathf.RoundToInt(f.Grain * 100f)}%", ref f.Grain, 0f, 1f, 0.05f);
+            fc |= ui.Slider($"Chromatic aberration: {Mathf.RoundToInt(f.Aberration * 100f)}%", ref f.Aberration, 0f, 1f, 0.05f);
+            fc |= ui.Slider($"Lens distortion: {f.Distortion:+0.00;-0.00;0}", ref f.Distortion, -1f, 1f, 0.02f);
+            fc |= ui.Toggle("Old TV scanlines", ref f.Scanlines);
+            ui.Note("Grain, aberration and distortion only work if the game ships their shaders: if you see no difference, it does not.", 2);
+            if (_volumeFailed) ui.Note("<color=#ff8888>The filter could not start (see the log).</color>");
 
             if (fc)
             {

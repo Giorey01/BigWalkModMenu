@@ -121,11 +121,11 @@ namespace BigWalk.ModMenu
         {
             get
             {
-                if (_disabled) return "spenta: " + (_problem ?? "errore");
-                if (!_sessionActive) return "non in partita";
-                if (IsHost) return _hookedServer ? $"attiva, sei l'host ({_peers.Count} amici con la mod)" : "in attesa della chat vocale";
-                if (_hostModded) return "attiva";
-                return _helloAttempts >= 4 ? "l'host non ha la mod" : "cerco l'host…";
+                if (_disabled) return "off: " + (_problem ?? "error");
+                if (!_sessionActive) return "not in a walk";
+                if (IsHost) return _hookedServer ? $"on, you are the host ({_peers.Count} friends with the mod)" : "waiting for voice chat";
+                if (_hostModded) return "on";
+                return _helloAttempts >= 4 ? "the host does not have the mod" : "looking for the host…";
             }
         }
 
@@ -485,7 +485,7 @@ namespace BigWalk.ModMenu
 
             if (Smol.Present)
             {
-                if (!Smol.Usable) { Disable("versione di smolMods.Core non riconosciuta"); return; }
+                if (!Smol.Usable) { Disable("unrecognised version of smolMods.Core"); return; }
                 NetworkMessageDelegate theirs = Smol.Ours(server);
                 if (Same(current, theirs))
                 {
@@ -638,14 +638,14 @@ namespace BigWalk.ModMenu
             if (_versionWarned) return;
             _versionWarned = true;
             ModMenuApi.Log.LogWarning("[Net] A player uses a different version of the mod menu: their messages are ignored.");
-            ModMenuApi.Toast("Un amico ha una versione diversa della mod: il suo aspetto non verrà condiviso.", 6f);
+            ModMenuApi.Toast("A friend runs a different version of the mod: their look will not be shared.", 6f);
         }
 
         private static void Fail(string what)
         {
             _failures++;
             ModMenuApi.Log.LogWarning($"[Net] {what} ({_failures}/{MaxFailures})");
-            if (_failures >= MaxFailures) Disable("troppi errori");
+            if (_failures >= MaxFailures) Disable("too many errors");
         }
 
         // From here on every voice message goes straight to the original handler.

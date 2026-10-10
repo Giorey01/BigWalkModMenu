@@ -207,7 +207,7 @@ namespace BigWalk.ModMenu
             float ox = X, oy = Y, ow = Width;
             X = ox + size + 10f;
             Width = ow - size - 10f;
-            changed |= Slider($"Luminosità: {Mathf.RoundToInt(value * 100f)}%", ref value, 0f, 1f, 0.05f);
+            changed |= Slider($"Brightness: {Mathf.RoundToInt(value * 100f)}%", ref value, 0f, 1f, 0.05f);
             Swatch(Game.Hsv(hue, saturation, value), 22f);
             X = ox;
             Width = ow;
@@ -221,7 +221,7 @@ namespace BigWalk.ModMenu
             bool capturing = ReferenceEquals(ModMenuApi.CapturingKey, key);
             float lw = Width * 0.6f;
             GUI.Label(new Rect(X, Y, lw, Row), key.Label);
-            string text = capturing ? "<b>premi un tasto…</b>" : (key.Key == KeyCode.None ? "nessuno" : key.Key.ToString());
+            string text = capturing ? "<b>press a key…</b>" : (key.Key == KeyCode.None ? "none" : key.Key.ToString());
             if (GUI.Button(new Rect(X + lw, Y, Width - lw, Row), text))
             {
                 ModMenuApi.CapturingKey = capturing ? null : key;

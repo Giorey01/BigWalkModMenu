@@ -41,16 +41,16 @@ namespace BigWalk.ModMenu.SoloPlay
         private int _maxExtra = 3;
         private bool _stayOnCurrent;
         private float _followSpeed = 1.35f, _stopDistance = 1.4f, _catchUpDistance = 14f;
-        private readonly Hotkey _spawnKey = new Hotkey("Spawn", "Aggiungi un personaggio", KeyCode.Plus);
-        private readonly Hotkey _spawnKeyAlt = new Hotkey("SpawnAlt", "Aggiungi (secondo tasto)", KeyCode.KeypadPlus);
-        private readonly Hotkey _gatherKey = new Hotkey("Gather", "Raduna tutti da me", KeyCode.R);
-        private readonly Hotkey _followKey = new Hotkey("Follow", "Seguimi sì/no", KeyCode.None);
+        private readonly Hotkey _spawnKey = new Hotkey("Spawn", "Add a character", KeyCode.Plus);
+        private readonly Hotkey _spawnKeyAlt = new Hotkey("SpawnAlt", "Add (second key)", KeyCode.KeypadPlus);
+        private readonly Hotkey _gatherKey = new Hotkey("Gather", "Gather everyone here", KeyCode.R);
+        private readonly Hotkey _followKey = new Hotkey("Follow", "Follow me on/off", KeyCode.None);
         private readonly Hotkey[] _slotKeys =
         {
-            new Hotkey("Slot1", "Passa al personaggio 1", KeyCode.Alpha1),
-            new Hotkey("Slot2", "Passa al personaggio 2", KeyCode.Alpha2),
-            new Hotkey("Slot3", "Passa al personaggio 3", KeyCode.Alpha3),
-            new Hotkey("Slot4", "Passa al personaggio 4", KeyCode.Alpha4),
+            new Hotkey("Slot1", "Switch to character 1", KeyCode.Alpha1),
+            new Hotkey("Slot2", "Switch to character 2", KeyCode.Alpha2),
+            new Hotkey("Slot3", "Switch to character 3", KeyCode.Alpha3),
+            new Hotkey("Slot4", "Switch to character 4", KeyCode.Alpha4),
         };
 
         // Session state.
@@ -256,14 +256,14 @@ namespace BigWalk.ModMenu.SoloPlay
             if (Busy) return;
             if (slot < 1 || slot >= Slots || slot > _maxExtra)
             {
-                ModMenuApi.Toast($"Solo: hai già tutti i personaggi ({_maxExtra + 1}).");
+                ModMenuApi.Toast($"Solo: you already have every character ({_maxExtra + 1}).");
                 return;
             }
             if (_ids[slot] != 0) return;
             NetworkManager manager = NetworkManager.singleton;
             if (manager == null || manager.playerPrefab == null)
             {
-                ModMenuApi.Toast("Solo: il gioco non è ancora pronto a creare personaggi.");
+                ModMenuApi.Toast("Solo: the game is not ready to create characters yet.");
                 return;
             }
 
@@ -304,7 +304,7 @@ namespace BigWalk.ModMenu.SoloPlay
             if (Busy) return false;
             if (slot < 0 || slot >= Slots || _ids[slot] == 0)
             {
-                ModMenuApi.Toast($"Solo: il personaggio {slot + 1} non c'è ancora.");
+                ModMenuApi.Toast($"Solo: character {slot + 1} does not exist yet.");
                 return false;
             }
             if (_ids[slot] == me.netId) return true;
@@ -394,7 +394,7 @@ namespace BigWalk.ModMenu.SoloPlay
             // Deleting the one being played: step back into the first character, then remove it.
             if (!TryIdentity(_ids[0], out NetworkIdentity first))
             {
-                ModMenuApi.Toast("Solo: non posso togliere questo personaggio, il primo non c'è più.");
+                ModMenuApi.Toast("Solo: cannot remove this character, the first one is gone.");
                 return;
             }
             _deleteAfterSwitch = slot;
@@ -544,7 +544,7 @@ namespace BigWalk.ModMenu.SoloPlay
                 ResetProgress(i, spot);
                 moved++;
             }
-            if (moved > 0) ModMenuApi.Toast($"Solo: {moved} personaggi radunati.");
+            if (moved > 0) ModMenuApi.Toast($"Solo: {moved} characters gathered.");
         }
 
         private void SetFollow(bool on)
@@ -557,7 +557,7 @@ namespace BigWalk.ModMenu.SoloPlay
                 if (on || me == null || _ids[i] == me.netId || !TryIdentity(_ids[i], out NetworkIdentity identity)) continue;
                 Brake(identity.GetComponent<PlayerCharacter>());
             }
-            ModMenuApi.Toast(on ? "Solo: gli altri ti seguono" : "Solo: gli altri restano fermi");
+            ModMenuApi.Toast(on ? "Solo: the others follow you" : "Solo: the others stay put");
         }
 
         private void ResetProgress(int slot, Vector3 position)
@@ -705,28 +705,28 @@ namespace BigWalk.ModMenu.SoloPlay
         public override void DrawTab(Ui ui)
         {
             bool changed = false;
-            ui.Header("Giocare da soli");
+            ui.Header("Playing alone");
             if (OriginalModLoaded)
             {
-                ui.Note("<color=#ff8888>È installata anche la mod \"Big Walk Solo Player\" originale: fanno la stessa cosa e si pesterebbero i piedi. Togli la cartella BepInEx/plugins/BigWalkSoloMod per usare questa scheda.</color>", 4);
+                ui.Note("<color=#ff8888>The stand-alone \"Big Walk Solo Player\" mod is installed too: both do the same job and would get in each other's way. Remove the folder BepInEx/plugins/BigWalkSoloMod to use this tab.</color>", 4);
                 return;
             }
             bool wasEnabled = _enabled;
-            changed |= ui.Toggle("Più personaggi per un solo giocatore", ref _enabled);
+            changed |= ui.Toggle("Several characters for one player", ref _enabled);
             if (wasEnabled && !_enabled)
             {
                 _enabled = true;
-                if (HasExtras) { ModMenuApi.Toast("Solo: togli prima i personaggi in più."); changed = false; }
+                if (HasExtras) { ModMenuApi.Toast("Solo: remove the extra characters first."); changed = false; }
                 else _enabled = false;
             }
-            ui.Note("Fino a quattro personaggi che comandi uno alla volta. Funziona solo nelle partite che organizzi tu.", 2);
+            ui.Note("Up to four characters that you control one at a time. Only works in walks you host.", 2);
             if (!_enabled) { if (changed) Dirty = true; return; }
 
             NetworkIdentity me = Hosting ? NetworkClient.localPlayer : null;
-            ui.Header("Personaggi");
+            ui.Header("Characters");
             if (me == null)
             {
-                ui.Note(Game.InWorld ? "<color=#ffaa66>Sei ospite in questa partita: i personaggi in più li può creare solo chi la organizza.</color>" : "Organizza una partita per usare i personaggi.", 2);
+                ui.Note(Game.InWorld ? "<color=#ffaa66>You are a guest in this walk: only the host can create extra characters.</color>" : "Host a walk to use the characters.", 2);
             }
             else
             {
@@ -734,11 +734,11 @@ namespace BigWalk.ModMenu.SoloPlay
                 GUI.enabled = was && !Settling;
                 for (int i = 0; i < Slots; i++) SlotRow(ui, me, i);
                 GUI.enabled = was;
-                if (Busy) ui.Note("Cambio personaggio in corso…");
+                if (Busy) ui.Note("Switching character…");
 
                 bool follow = _follow;
-                if (ui.Toggle("Gli altri mi seguono", ref follow)) SetFollow(follow);
-                int hit = ui.Buttons("Raduna qui", "Alla partenza", "Salva partenza");
+                if (ui.Toggle("The others follow me", ref follow)) SetFollow(follow);
+                int hit = ui.Buttons("Gather here", "To the start", "Save start");
                 if (hit == 0) GatherAt(me.transform.position, me.transform.rotation);
                 else if (hit == 1)
                 {
@@ -751,20 +751,20 @@ namespace BigWalk.ModMenu.SoloPlay
                     _startPosition = me.transform.position;
                     _startRotation = me.transform.rotation;
                     _startSaved = true;
-                    ModMenuApi.Toast("Solo: punto di partenza salvato");
+                    ModMenuApi.Toast("Solo: start point saved");
                 }
             }
 
-            ui.Header("Regole");
-            changed |= ui.SliderInt($"Personaggi in più: fino a {_maxExtra}", ref _maxExtra, 1, Slots - 1);
-            changed |= ui.Toggle("Dopo un'aggiunta resto dove sono", ref _stayOnCurrent);
-            changed |= ui.Slider($"Velocità di chi segue: {Mathf.RoundToInt(_followSpeed * 100f)}%", ref _followSpeed, 0.5f, 3f, 0.05f);
-            changed |= ui.Slider($"Si fermano a {_stopDistance:0.0} m dal posto", ref _stopDistance, 0.5f, 6f, 0.1f);
-            changed |= ui.Slider($"Oltre {_catchUpDistance:0} m ricompaiono vicino", ref _catchUpDistance, 4f, 80f, 1f);
+            ui.Header("Rules");
+            changed |= ui.SliderInt($"Extra characters: up to {_maxExtra}", ref _maxExtra, 1, Slots - 1);
+            changed |= ui.Toggle("After adding one, stay on mine", ref _stayOnCurrent);
+            changed |= ui.Slider($"Follower speed: {Mathf.RoundToInt(_followSpeed * 100f)}%", ref _followSpeed, 0.5f, 3f, 0.05f);
+            changed |= ui.Slider($"They stop {_stopDistance:0.0} m from their spot", ref _stopDistance, 0.5f, 6f, 0.1f);
+            changed |= ui.Slider($"Beyond {_catchUpDistance:0} m they reappear nearby", ref _catchUpDistance, 4f, 80f, 1f);
 
-            ui.Header("Tasti");
+            ui.Header("Keys");
             foreach (Hotkey k in AllKeys()) changed |= ui.HotkeyRow(k);
-            ui.Note("I tasti non rispondono mentre scrivi in chat.");
+            ui.Note("Keys do not respond while you type in chat.");
 
             if (changed) Dirty = true;
         }
@@ -775,19 +775,19 @@ namespace BigWalk.ModMenu.SoloPlay
             Ui.Tint(r, new Color(1f, 1f, 1f, 0.05f));
             bool present = _ids[slot] != 0 && TryIdentity(_ids[slot], out _);
             bool active = present && _ids[slot] == me.netId;
-            string name = slot == 0 ? "1  Il tuo personaggio" : $"{slot + 1}  Personaggio in più";
+            string name = slot == 0 ? "1  Your character" : $"{slot + 1}  Extra character";
             GUI.Label(new Rect(r.x + 6f, r.y + 3f, r.width * 0.5f, 20f), active ? "<b>" + name + "</b>" : name);
             float bw = r.width * 0.22f, bx = r.x + r.width - bw * 2f - 6f;
             if (present)
             {
-                if (active) GUI.Label(new Rect(bx + 6f, r.y + 3f, bw, 20f), "<color=#88ff88>in uso</color>");
-                else if (GUI.Button(new Rect(bx, r.y + 2f, bw, 20f), "Usa")) Select(me, slot);
-                if (slot > 0 && GUI.Button(new Rect(bx + bw + 4f, r.y + 2f, bw, 20f), "Togli")) Delete(me, slot);
+                if (active) GUI.Label(new Rect(bx + 6f, r.y + 3f, bw, 20f), "<color=#88ff88>in use</color>");
+                else if (GUI.Button(new Rect(bx, r.y + 2f, bw, 20f), "Use")) Select(me, slot);
+                if (slot > 0 && GUI.Button(new Rect(bx + bw + 4f, r.y + 2f, bw, 20f), "Remove")) Delete(me, slot);
             }
             else if (slot > 0)
             {
-                if (slot > _maxExtra) GUI.Label(new Rect(bx + bw + 4f, r.y + 3f, bw, 20f), "<color=#aaaaaa>escluso</color>");
-                else if (GUI.Button(new Rect(bx + bw + 4f, r.y + 2f, bw, 20f), "Aggiungi")) Spawn(me, slot);
+                if (slot > _maxExtra) GUI.Label(new Rect(bx + bw + 4f, r.y + 3f, bw, 20f), "<color=#aaaaaa>disabled</color>");
+                else if (GUI.Button(new Rect(bx + bw + 4f, r.y + 2f, bw, 20f), "Add")) Spawn(me, slot);
             }
         }
     }

@@ -59,10 +59,10 @@ namespace BigWalk.ModMenu.Reshade
         public override string Title => "Reshade";
         public override int Order => 52;
 
-        private static readonly string[] TonemapNames = { "del gioco", "neutro", "filmico (ACES)" };
-        private static readonly string[] PresetNames = { "Cinematic", "Vivido", "Sogno", "Drammatico", "Solo nitidezza" };
+        private static readonly string[] TonemapNames = { "game's own", "neutral", "filmic (ACES)" };
+        private static readonly string[] PresetNames = { "Cinematic", "Vivid", "Dream", "Dramatic", "Sharpen only" };
 
-        private readonly Hotkey _toggleKey = new Hotkey("Toggle", "Accendi/spegni gli effetti", KeyCode.None);
+        private readonly Hotkey _toggleKey = new Hotkey("Toggle", "Effects on/off", KeyCode.None);
         private readonly Look _look = new Look();
         private bool _enabled;
         private float _strength = 1f;
@@ -393,7 +393,7 @@ namespace BigWalk.ModMenu.Reshade
                 _enabled = !_enabled;
                 _dirty = true;
                 Dirty = true;
-                ModMenuApi.Toast(_enabled ? "Reshade: acceso" : "Reshade: spento");
+                ModMenuApi.Toast(_enabled ? "Reshade: on" : "Reshade: off");
             }
             if (!Game.InWorld) return;
             if (!_reported) Report();
@@ -435,12 +435,12 @@ namespace BigWalk.ModMenu.Reshade
             bool changed = false;
 
             ui.Header("Reshade");
-            changed |= ui.Toggle("Effetti", ref _enabled);
+            changed |= ui.Toggle("Effects", ref _enabled);
             changed |= ui.HotkeyRow(_toggleKey);
-            changed |= ui.Slider($"Intensità generale: {Mathf.RoundToInt(_strength * 100f)}%", ref _strength, 0f, 1f, 0.05f);
-            ui.Note("Rifatto con il motore del gioco: non serve installare ReShade. Lo vedi solo tu, e finisce anche nelle foto.", 2);
+            changed |= ui.Slider($"Overall strength: {Mathf.RoundToInt(_strength * 100f)}%", ref _strength, 0f, 1f, 0.05f);
+            ui.Note("Built with the game's own renderer: no ReShade install needed. Only you see it, and it shows up in photos too.", 2);
 
-            ui.Header("Stili pronti");
+            ui.Header("Ready-made looks");
             int row = 0;
             while (row < PresetNames.Length)
             {
@@ -457,46 +457,46 @@ namespace BigWalk.ModMenu.Reshade
                 row += n;
             }
 
-            ui.Header("Bagliore (bloom)");
-            changed |= Value(ui, "Intensità", Look.Bloom, 0f, 5f, 0.05f);
+            ui.Header("Bloom");
+            changed |= Value(ui, "Intensity", Look.Bloom, 0f, 5f, 0.05f);
             if (_look[Look.Bloom] > 1e-3f)
             {
-                changed |= Value(ui, "Soglia (più bassa = brilla di più)", Look.BloomThreshold, 0f, 2f, 0.05f);
-                changed |= Value(ui, "Ampiezza dell'alone", Look.BloomScatter, 0f, 1f, 0.05f);
-                changed |= Value(ui, "Tinta (− fredda, + calda)", Look.BloomTint, -1f, 1f, 0.05f, "+0.00;-0.00;0");
-                changed |= Value(ui, "Lente sporca", Look.Dirt, 0f, 4f, 0.1f, "0.0");
-                changed |= Value(ui, "Riflessi della lente", Look.Flare, 0f, 3f, 0.05f);
-                if (_look[Look.Flare] > 1e-3f) changed |= Value(ui, "Strisce di luce", Look.Streaks, 0f, 1f, 0.05f);
+                changed |= Value(ui, "Threshold (lower = more glow)", Look.BloomThreshold, 0f, 2f, 0.05f);
+                changed |= Value(ui, "Halo width", Look.BloomScatter, 0f, 1f, 0.05f);
+                changed |= Value(ui, "Tint (− cool, + warm)", Look.BloomTint, -1f, 1f, 0.05f, "+0.00;-0.00;0");
+                changed |= Value(ui, "Lens dirt", Look.Dirt, 0f, 4f, 0.1f, "0.0");
+                changed |= Value(ui, "Lens flares", Look.Flare, 0f, 3f, 0.05f);
+                if (_look[Look.Flare] > 1e-3f) changed |= Value(ui, "Light streaks", Look.Streaks, 0f, 1f, 0.05f);
             }
             else
             {
-                ui.Note("Lente sporca e riflessi nascono dal bagliore: si regolano quando è acceso.");
+                ui.Note("Lens dirt and flares come from the bloom: they can be set while it is on.");
             }
 
-            ui.Header("Toni e colore");
+            ui.Header("Tone and colour");
             int tone = Mathf.Clamp(Mathf.RoundToInt(_look[Look.Tonemap]), 0, 2);
-            if (ui.Choice("Curva dei toni", ref tone, TonemapNames))
+            if (ui.Choice("Tone curve", ref tone, TonemapNames))
             {
                 _look[Look.Tonemap] = tone;
                 changed = true;
             }
-            changed |= Value(ui, "Esposizione", Look.Exposure, -2f, 2f, 0.05f, "+0.00;-0.00;0");
-            changed |= Value(ui, "Contrasto", Look.Contrast, -50f, 50f, 1f, "+0;-0;0");
-            changed |= Value(ui, "Saturazione", Look.Saturation, -60f, 60f, 1f, "+0;-0;0");
-            changed |= Value(ui, "Ombre (+ le schiarisce)", Look.Shadows, -0.5f, 0.5f, 0.01f, "+0.00;-0.00;0");
-            changed |= Value(ui, "Luci alte", Look.Highlights, -0.5f, 0.5f, 0.01f, "+0.00;-0.00;0");
-            ui.Note("Se usi anche il Filtro della scheda Mondo, esposizione, contrasto e saturazione li decide lui.", 2);
+            changed |= Value(ui, "Exposure", Look.Exposure, -2f, 2f, 0.05f, "+0.00;-0.00;0");
+            changed |= Value(ui, "Contrast", Look.Contrast, -50f, 50f, 1f, "+0;-0;0");
+            changed |= Value(ui, "Saturation", Look.Saturation, -60f, 60f, 1f, "+0;-0;0");
+            changed |= Value(ui, "Shadows (+ lifts them)", Look.Shadows, -0.5f, 0.5f, 0.01f, "+0.00;-0.00;0");
+            changed |= Value(ui, "Highlights", Look.Highlights, -0.5f, 0.5f, 0.01f, "+0.00;-0.00;0");
+            ui.Note("If you also use the Filter in the World tab, it decides exposure, contrast and saturation.", 2);
 
-            ui.Header("Nitidezza");
-            changed |= Value(ui, "Nitidezza", Look.Sharpen, 0f, 1f, 0.05f);
+            ui.Header("Sharpening");
+            changed |= Value(ui, "Sharpening", Look.Sharpen, 0f, 1f, 0.05f);
             if (_look[Look.Sharpen] > 1e-3f)
             {
                 if (_enabled && !_sharpening && GraphicsShare.AntialiasingOwner != null && GraphicsShare.AntialiasingOwner != Owner)
-                    ui.Note("<color=#ffaa66>L'antialiasing è in uso da un'altra scheda: la nitidezza aspetta.</color>");
+                    ui.Note("<color=#ffaa66>Another tab is using the antialiasing: sharpening is waiting.</color>");
                 else
-                    ui.Note("Passa l'antialiasing a TAA, perché il gioco affila l'immagine solo dopo quello. Finché è accesa, la voce \"Antialiasing a schermo\" di Prestazioni resta ferma.", 3);
+                    ui.Note("Switches antialiasing to TAA, because the game only sharpens after that. While it is on, \"Screen antialiasing\" in the Performance tab is on hold.", 3);
             }
-            if (_volumeFailed) ui.Note("<color=#ff8888>Gli effetti non sono riusciti a partire (vedi log).</color>");
+            if (_volumeFailed) ui.Note("<color=#ff8888>The effects could not start (see the log).</color>");
 
             if (changed)
             {

@@ -9,7 +9,7 @@ using UnityEngine.Rendering.Universal;
 
 namespace BigWalk.ModMenu.Performance
 {
-    [BepInPlugin("com.bigwalk.modmenu.performance", "Big Walk Mod Menu - Prestazioni", ModMenuApi.Version)]
+    [BepInPlugin("com.bigwalk.modmenu.performance", "Big Walk Mod Menu - Performance", ModMenuApi.Version)]
     [BepInDependency(BigWalk.ModMenu.Plugin.Guid)]
     public class Plugin : BasePlugin
     {
@@ -22,10 +22,10 @@ namespace BigWalk.ModMenu.Performance
     public sealed class PerformanceModule : MenuModule
     {
         public override string Id => "performance";
-        public override string Title => "Prestazioni";
+        public override string Title => "Performance";
         public override int Order => 40;
 
-        private readonly Hotkey _overlayKey = new Hotkey("Overlay", "Mostra/nascondi contatore", KeyCode.F3);
+        private readonly Hotkey _overlayKey = new Hotkey("Overlay", "Show/hide the counter", KeyCode.F3);
         private readonly List<Knob> _knobs = new List<Knob>();
         private bool _overlay, _graph = true;
 
@@ -40,7 +40,7 @@ namespace BigWalk.ModMenu.Performance
         private bool _timingsBroken;
 
         // Per-system quality (the game's own 0-5 levels, applied to one system at a time).
-        private static readonly string[] SystemNames = { "Vegetazione e terreno", "Oceano", "Cielo e sole", "Luci", "Effetti a schermo", "Dettagli lontani" };
+        private static readonly string[] SystemNames = { "Vegetation and terrain", "Ocean", "Sky and sun", "Lights", "Screen effects", "Distant detail" };
         private readonly int[] _systemLevel = { -1, -1, -1, -1, -1, -1 }; // -1 = follow the game
         private readonly int[] _systemApplied = { -1, -1, -1, -1, -1, -1 };
 
@@ -83,31 +83,31 @@ namespace BigWalk.ModMenu.Performance
         {
             string Pct(float v) => Mathf.RoundToInt(v * 100f) + "%";
 
-            _knobs.Add(new Knob("RenderScale", "Scala di rendering", 0.1f, 2f, 0.05f, 1f, false,
+            _knobs.Add(new Knob("RenderScale", "Render scale", 0.1f, 2f, 0.05f, 1f, false,
                 () => { var u = Urp; return u != null ? u.renderScale : float.NaN; },
                 v => Urp.renderScale = v,
                 (v, e) => $"{Pct(v)} ({Mathf.RoundToInt(Screen.width * v)}x{Mathf.RoundToInt(Screen.height * v)})"));
-            _knobs.Add(new Knob("ShadowDistance", "Distanza delle ombre", 0f, 3f, 0.05f, 1f, true,
+            _knobs.Add(new Knob("ShadowDistance", "Shadow distance", 0f, 3f, 0.05f, 1f, true,
                 () => { var u = Urp; return u != null ? u.shadowDistance : float.NaN; },
                 v => Urp.shadowDistance = v,
-                (v, e) => v < 0.01f ? "spente" : $"{Pct(v)} ({e:0} m)"));
-            _knobs.Add(new Knob("LodBias", "Dettaglio degli oggetti lontani (LOD)", 0.1f, 10f, 0.05f, 1f, true,
+                (v, e) => v < 0.01f ? "off" : $"{Pct(v)} ({e:0} m)"));
+            _knobs.Add(new Knob("LodBias", "Detail of distant objects (LOD)", 0.1f, 10f, 0.05f, 1f, true,
                 () => QualitySettings.lodBias,
                 v => QualitySettings.lodBias = v,
                 (v, e) => Pct(v)));
-            _knobs.Add(new Knob("FarClip", "Distanza visiva", 0.1f, 3f, 0.05f, 1f, true,
+            _knobs.Add(new Knob("FarClip", "View distance", 0.1f, 3f, 0.05f, 1f, true,
                 () => { var c = Game.PlayerCamera; return c != null ? c.farClipPlane : float.NaN; },
                 v => { var c = Game.PlayerCamera; if (c != null) c.farClipPlane = v; },
                 (v, e) => $"{Pct(v)} ({e:0} m)"));
             _knobs.Add(new Knob("Msaa", "Antialiasing (MSAA)", 0f, 3f, 1f, 0f, false,
                 () => { var u = Urp; return u != null ? Mathf.Log(Mathf.Max(1, u.msaaSampleCount), 2f) : float.NaN; },
                 v => Urp.msaaSampleCount = 1 << Mathf.RoundToInt(v),
-                (v, e) => Mathf.RoundToInt(v) == 0 ? "spento" : (1 << Mathf.RoundToInt(v)) + "x"));
-            _knobs.Add(new Knob("CameraAa", "Antialiasing a schermo", 0f, 3f, 1f, 0f, false,
+                (v, e) => Mathf.RoundToInt(v) == 0 ? "off" : (1 << Mathf.RoundToInt(v)) + "x"));
+            _knobs.Add(new Knob("CameraAa", "Screen antialiasing", 0f, 3f, 1f, 0f, false,
                 () => { var d = CameraData; return d != null ? (float)(int)d.antialiasing : float.NaN; },
                 v => { var d = CameraData; if (d != null) d.antialiasing = (AntialiasingMode)Mathf.RoundToInt(v); },
-                (v, e) => new[] { "nessuno", "FXAA (veloce, sfuma)", "SMAA (leggero)", "TAA (stabile, più morbido)" }[Mathf.Clamp(Mathf.RoundToInt(v), 0, 3)]));
-            _knobs.Add(new Knob("Fov", "Campo visivo (FOV)", 45f, 150f, 1f, 90f, false,
+                (v, e) => new[] { "none", "FXAA (fast, blurs)", "SMAA (light)", "TAA (stable, softer)" }[Mathf.Clamp(Mathf.RoundToInt(v), 0, 3)]));
+            _knobs.Add(new Knob("Fov", "Field of view (FOV)", 45f, 150f, 1f, 90f, false,
                 () => PlayerCameraMinder.fovFromSettings,
                 v =>
                 {
@@ -117,38 +117,38 @@ namespace BigWalk.ModMenu.Performance
                     if (c != null) c.fieldOfView = v;
                 },
                 (v, e) => Mathf.RoundToInt(v) + "°"));
-            _knobs.Add(new Knob("Upscaling", "Filtro di ridimensionamento", 0f, 3f, 1f, 1f, false,
+            _knobs.Add(new Knob("Upscaling", "Upscaling filter", 0f, 3f, 1f, 1f, false,
                 () => { var u = Urp; return u != null ? (float)(int)u.upscalingFilter : float.NaN; },
                 v => Urp.upscalingFilter = (UpscalingFilterSelection)Mathf.RoundToInt(v),
-                (v, e) => new[] { "automatico", "lineare (morbido)", "a punti (pixel netti)", "FSR 1.0 (nitido)" }[Mathf.Clamp(Mathf.RoundToInt(v), 0, 3)]));
-            _knobs.Add(new Knob("ShadowCascades", "Cascate delle ombre", 1f, 4f, 1f, 4f, false,
+                (v, e) => new[] { "automatic", "linear (soft)", "point (hard pixels)", "FSR 1.0 (sharp)" }[Mathf.Clamp(Mathf.RoundToInt(v), 0, 3)]));
+            _knobs.Add(new Knob("ShadowCascades", "Shadow cascades", 1f, 4f, 1f, 4f, false,
                 () => { var u = Urp; return u != null ? u.m_ShadowCascadeCount : float.NaN; },
                 v => Urp.m_ShadowCascadeCount = Mathf.Clamp(Mathf.RoundToInt(v), 1, 4),
                 (v, e) => Mathf.RoundToInt(v).ToString()));
-            _knobs.Add(new Knob("ShadowResolution", "Risoluzione delle ombre", 8f, 13f, 1f, 12f, false,
+            _knobs.Add(new Knob("ShadowResolution", "Shadow resolution", 8f, 13f, 1f, 12f, false,
                 () => { var u = Urp; return u != null ? Mathf.Round(Mathf.Log(Mathf.Max(256, u.mainLightShadowmapResolution), 2f)) : float.NaN; },
                 v => Urp.m_MainLightShadowmapResolution = (UnityEngine.Rendering.Universal.ShadowResolution)(1 << Mathf.Clamp(Mathf.RoundToInt(v), 8, 13)),
                 (v, e) => (1 << Mathf.Clamp(Mathf.RoundToInt(v), 8, 13)).ToString()));
-            _knobs.Add(new Knob("SoftShadows", "Ombre morbide", 0f, 1f, 1f, 1f, false,
+            _knobs.Add(new Knob("SoftShadows", "Soft shadows", 0f, 1f, 1f, 1f, false,
                 () => { var u = Urp; return u != null ? (u.m_SoftShadowsSupported ? 1f : 0f) : float.NaN; },
                 v => Urp.m_SoftShadowsSupported = v > 0.5f,
-                (v, e) => v > 0.5f ? "sì" : "no (bordi a pixel)"));
-            _knobs.Add(new Knob("Aniso", "Filtro anisotropico", 0f, 2f, 1f, 2f, false,
+                (v, e) => v > 0.5f ? "yes" : "no (pixelated edges)"));
+            _knobs.Add(new Knob("Aniso", "Anisotropic filtering", 0f, 2f, 1f, 2f, false,
                 () => (float)(int)QualitySettings.anisotropicFiltering,
                 v => QualitySettings.anisotropicFiltering = (AnisotropicFiltering)Mathf.Clamp(Mathf.RoundToInt(v), 0, 2),
-                (v, e) => new[] { "spento", "solo dove previsto", "ovunque" }[Mathf.Clamp(Mathf.RoundToInt(v), 0, 2)]));
-            _knobs.Add(new Knob("TextureLimit", "Qualità delle texture", 0f, 3f, 1f, 0f, false,
+                (v, e) => new[] { "off", "where the game asks", "everywhere" }[Mathf.Clamp(Mathf.RoundToInt(v), 0, 2)]));
+            _knobs.Add(new Knob("TextureLimit", "Texture quality", 0f, 3f, 1f, 0f, false,
                 () => QualitySettings.globalTextureMipmapLimit,
                 v => QualitySettings.globalTextureMipmapLimit = Mathf.RoundToInt(v),
-                (v, e) => new[] { "piena", "metà", "un quarto", "un ottavo" }[Mathf.Clamp(Mathf.RoundToInt(v), 0, 3)]));
-            _knobs.Add(new Knob("FpsLimit", "Limite FPS", 0f, 240f, 5f, 60f, false,
+                (v, e) => new[] { "full", "half", "quarter", "eighth" }[Mathf.Clamp(Mathf.RoundToInt(v), 0, 3)]));
+            _knobs.Add(new Knob("FpsLimit", "FPS limit", 0f, 240f, 5f, 60f, false,
                 () => Application.targetFrameRate,
                 v => Application.targetFrameRate = v < 5f ? -1 : Mathf.RoundToInt(v),
-                (v, e) => v < 5f ? "nessuno" : Mathf.RoundToInt(v).ToString()));
+                (v, e) => v < 5f ? "none" : Mathf.RoundToInt(v).ToString()));
             _knobs.Add(new Knob("VSync", "VSync", 0f, 2f, 1f, 0f, false,
                 () => QualitySettings.vSyncCount,
                 v => QualitySettings.vSyncCount = Mathf.RoundToInt(v),
-                (v, e) => new[] { "spento", "acceso", "metà frequenza" }[Mathf.Clamp(Mathf.RoundToInt(v), 0, 2)]));
+                (v, e) => new[] { "off", "on", "half refresh rate" }[Mathf.Clamp(Mathf.RoundToInt(v), 0, 2)]));
         }
 
         public override void Load(ModConfig c)
@@ -366,9 +366,9 @@ namespace BigWalk.ModMenu.Performance
         private string Bottleneck()
         {
             if (_cpuMs <= 0.01f || _gpuMs <= 0.01f) return null;
-            if (_gpuMs > _cpuMs * 1.15f) return "limite: <b>scheda video</b>";
-            if (_cpuMs > _gpuMs * 1.15f) return "limite: <b>processore</b>";
-            return "CPU e GPU alla pari";
+            if (_gpuMs > _cpuMs * 1.15f) return "bottleneck: <b>graphics card</b>";
+            if (_cpuMs > _gpuMs * 1.15f) return "bottleneck: <b>processor</b>";
+            return "CPU and GPU level";
         }
 
         public override void DrawOverlay()
@@ -379,7 +379,7 @@ namespace BigWalk.ModMenu.Performance
             Ui.Tint(box, new Color(0f, 0f, 0f, 0.55f));
             string colour = _fps >= 55f ? "#88ff88" : _fps >= 30f ? "#ffee66" : "#ff7766";
             GUI.Label(new Rect(16f, 12f, w - 12f, 20f), $"<color={colour}><b>{_fps:0} FPS</b></color>  min 1%: {_low:0}  {_avgMs:0.0} ms");
-            string timings = _cpuMs > 0.01f || _gpuMs > 0.01f ? $"CPU {_cpuMs:0.0} ms  GPU {_gpuMs:0.0} ms" : "CPU/GPU: non disponibile";
+            string timings = _cpuMs > 0.01f || _gpuMs > 0.01f ? $"CPU {_cpuMs:0.0} ms  GPU {_gpuMs:0.0} ms" : "CPU/GPU: not available";
             GUI.Label(new Rect(16f, 28f, w - 12f, 20f), "<size=11>" + timings + "</size>");
             if (!_graph) return;
 
@@ -421,31 +421,31 @@ namespace BigWalk.ModMenu.Performance
         {
             bool changed = false;
 
-            ui.Header("Adesso");
+            ui.Header("Right now");
             ui.Label($"<b>{_fps:0} FPS</b>  (min 1%: {_low:0})   {_avgMs:0.0} ms per frame");
             string bottleneck = Bottleneck();
             if (bottleneck != null) ui.Label($"CPU {_cpuMs:0.0} ms • GPU {_gpuMs:0.0} ms • {bottleneck}");
-            else ui.Note("Tempi separati di CPU e GPU non disponibili in questo gioco.");
+            else ui.Note("Separate CPU and GPU timings are not available in this game.");
             try
             {
                 var u = Urp;
                 float rs = u != null ? u.renderScale : 1f;
                 long mem = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / (1024 * 1024);
-                ui.Note($"Schermo {Screen.width}x{Screen.height}, rendering {Mathf.RoundToInt(Screen.width * rs)}x{Mathf.RoundToInt(Screen.height * rs)} • memoria {mem} MB • qualità del gioco: {SettingsHelper.GetQualityLevel()}", 2);
+                ui.Note($"Screen {Screen.width}x{Screen.height}, rendering {Mathf.RoundToInt(Screen.width * rs)}x{Mathf.RoundToInt(Screen.height * rs)} • memory {mem} MB • game quality: {SettingsHelper.GetQualityLevel()}", 2);
             }
             catch { }
-            changed |= ui.Toggle($"Contatore sullo schermo ({_overlayKey.Key})", ref _overlay);
-            if (_overlay) changed |= ui.Toggle("Con grafico", ref _graph);
+            changed |= ui.Toggle($"On-screen counter ({_overlayKey.Key})", ref _overlay);
+            if (_overlay) changed |= ui.Toggle("With graph", ref _graph);
             changed |= ui.HotkeyRow(_overlayKey);
-            ui.Note("Se il limite è il processore, abbassare la grafica serve a poco.");
+            ui.Note("If the processor is the bottleneck, lowering the graphics helps little.");
 
-            ui.Header("Profili rapidi");
-            int hit = ui.Buttons("Del gioco", "Qualità", "Bilanciato", "Patata");
+            ui.Header("Quick profiles");
+            int hit = ui.Buttons("Game's own", "Quality", "Balanced", "Potato");
             if (hit == 0) { foreach (Knob k in _knobs) k.On = false; Dirty = true; }
             else if (hit == 1) Preset(1.25f, 1.5f, 1.5f, 1f, true);
             else if (hit == 2) Preset(0.85f, 0.7f, 0.8f, 0.8f, true);
             else if (hit == 3) Preset(0.55f, 0.3f, 0.5f, 0.5f, true);
-            if (ui.Button("Nitido: supersampling 140%, LOD 4x, ombre 8192 (pesante)"))
+            if (ui.Button("Sharp: 140% supersampling, LOD 4x, 8192 shadows (heavy)"))
             {
                 // The recipe of the "Big Visuals" mod: no blur filter, the higher resolution smooths the edges.
                 Set("RenderScale", 1.4f); Set("LodBias", 4f); Set("CameraAa", 0f); Set("Upscaling", 1f);
@@ -453,12 +453,12 @@ namespace BigWalk.ModMenu.Performance
                 Dirty = true;
             }
 
-            ui.Header("Regolazioni");
-            ui.Note("Ogni voce spenta lascia il valore scelto dal gioco.");
-            if (GraphicsShare.AntialiasingOwner != null) ui.Note("<color=#ffaa66>\"Antialiasing a schermo\" è fermo: lo sta usando la nitidezza della scheda Reshade.</color>", 2);
+            ui.Header("Settings");
+            ui.Note("Anything switched off keeps the value the game chose.");
+            if (GraphicsShare.AntialiasingOwner != null) ui.Note("<color=#ffaa66>\"Screen antialiasing\" is on hold: the Reshade tab's sharpening is using it.</color>", 2);
             foreach (Knob k in _knobs)
             {
-                if (k.Broken) { ui.Note(k.Label + ": non disponibile"); continue; }
+                if (k.Broken) { ui.Note(k.Label + ": not available"); continue; }
                 changed |= ui.Toggle(k.Label, ref k.On);
                 if (!k.On) continue;
                 if (ui.Slider("   " + k.Format(k.Value, k.Effective), ref k.Value, k.Min, k.Max, k.Step))
@@ -468,9 +468,9 @@ namespace BigWalk.ModMenu.Performance
                 }
             }
 
-            ui.Header("Qualità per parte del gioco");
-            ui.Note("Sono i livelli di \"Qualità\" del gioco (0-5), ma applicati a una parte sola.", 2);
-            var levels = new[] { "come il gioco", "0", "1", "2", "3", "4", "5" };
+            ui.Header("Quality per part of the game");
+            ui.Note("These are the game's own \"Quality\" levels (0-5), applied to one part only.", 2);
+            var levels = new[] { "as the game", "0", "1", "2", "3", "4", "5" };
             for (int i = 0; i < SystemNames.Length; i++)
             {
                 int index = _systemLevel[i] + 1;
@@ -481,18 +481,18 @@ namespace BigWalk.ModMenu.Performance
                 }
             }
 
-            ui.Header("Effetti a schermo");
-            if (_effectOriginal.Count == 0) ui.Note("Disponibili una volta entrati in partita.");
+            ui.Header("Screen effects");
+            if (_effectOriginal.Count == 0) ui.Note("Available once you are in a walk.");
             foreach (var kv in new List<KeyValuePair<string, bool>>(_effectOriginal))
             {
                 changed |= ForcedToggle(ui, kv.Key, kv.Value, _effectForced);
             }
 
             ui.Space();
-            ui.Toggle("Mostra le funzioni avanzate del renderer", ref _showAdvanced);
+            ui.Toggle("Show the renderer's advanced features", ref _showAdvanced);
             if (_showAdvanced)
             {
-                ui.Note("Passaggi di disegno del gioco (occlusione ambientale, nuvole, sfocature...). Spegnerne alcuni può far sparire cielo o interfaccia: basta riaccenderli.", 3);
+                ui.Note("The game's render passes (ambient occlusion, clouds, blurs...). Switching some off can make the sky or the interface vanish: just switch them back on.", 3);
                 foreach (var kv in new List<KeyValuePair<string, bool>>(_featureOriginal))
                 {
                     changed |= ForcedToggle(ui, kv.Key, kv.Value, _featureForced);
@@ -511,7 +511,7 @@ namespace BigWalk.ModMenu.Performance
         {
             bool isForced = forced.TryGetValue(name, out bool value);
             int index = !isForced ? 0 : value ? 1 : 2;
-            var options = new[] { original ? "gioco (acceso)" : "gioco (spento)", "acceso", "spento" };
+            var options = new[] { original ? "game (on)" : "game (off)", "on", "off" };
             if (!ui.Choice(name, ref index, options)) return false;
             if (index == 0) forced.Remove(name);
             else forced[name] = index == 1;

@@ -47,8 +47,8 @@ namespace BigWalk.ModMenu.Replay
         public override int Order => 70;
 
         private readonly Recorder _recorder = new Recorder();
-        private readonly Hotkey _replayKey = new Hotkey("Replay", "Replay istantaneo / esci", KeyCode.F4);
-        private readonly Hotkey _recordKey = new Hotkey("Record", "Registra partita: avvia/ferma", KeyCode.F2);
+        private readonly Hotkey _replayKey = new Hotkey("Replay", "Instant replay / exit", KeyCode.F4);
+        private readonly Hotkey _recordKey = new Hotkey("Record", "Record the walk: start/stop", KeyCode.F2);
         private readonly object _owner = new object();
 
         // Playback.
@@ -90,7 +90,7 @@ namespace BigWalk.ModMenu.Replay
         {
             get
             {
-                string p = Path.Combine(DataPath, "registrazioni");
+                string p = ModMenuApi.Renamed(DataPath, "recordings", "registrazioni");
                 Directory.CreateDirectory(p);
                 return p;
             }
@@ -169,7 +169,7 @@ namespace BigWalk.ModMenu.Replay
             if (_recorder.RecordingToFile && _recorder.FileSeconds > _maxMinutes * 60f)
             {
                 _recorder.StopFile();
-                ModMenuApi.Toast($"Registrazione fermata: raggiunti {_maxMinutes:0} minuti.");
+                ModMenuApi.Toast($"Recording stopped: {_maxMinutes:0} minutes reached.");
             }
             if (ModMenuApi.IsMenuOpen && Time.unscaledTime > _nextScan)
             {
@@ -214,7 +214,7 @@ namespace BigWalk.ModMenu.Replay
         {
             if (_recorder.BufferedFrames < 10)
             {
-                ModMenuApi.Toast(_recorder.BufferSeconds < 1f ? "Il replay istantaneo è spento (accendilo dal menu)." : "Ancora niente da rivedere.");
+                ModMenuApi.Toast(_recorder.BufferSeconds < 1f ? "Instant replay is off (switch it on from the menu)." : "Nothing to replay yet.");
                 return;
             }
             Clip clip = _recorder.Snapshot();
@@ -225,23 +225,23 @@ namespace BigWalk.ModMenu.Replay
         {
             if (clip == null || clip.Frames.Count < 2)
             {
-                ModMenuApi.Toast("Registrazione vuota.");
+                ModMenuApi.Toast("Empty recording.");
                 return;
             }
             if (!Game.InWorld)
             {
-                ModMenuApi.Toast("Entra in una partita per guardare il replay.");
+                ModMenuApi.Toast("Join a walk to watch the replay.");
                 return;
             }
             if (Active) StopPlayback();
             if (_recorder.RecordingToFile)
             {
                 _recorder.StopFile();
-                ModMenuApi.Toast("Registrazione della partita fermata per guardare il replay.");
+                ModMenuApi.Toast("The walk recording was stopped to watch the replay.");
             }
             if (!CameraRig.Acquire(_owner))
             {
-                ModMenuApi.Toast("Telecamera del giocatore non trovata.");
+                ModMenuApi.Toast("Player camera not found.");
                 return;
             }
             InputLock.Set(_owner, true, true, true);
@@ -480,15 +480,15 @@ namespace BigWalk.ModMenu.Replay
             {
                 string name = Path.GetFileName(_recorder.FilePath);
                 _recorder.StopFile();
-                ModMenuApi.Toast("Registrazione salvata: " + name);
+                ModMenuApi.Toast("Recording saved: " + name);
                 ScanFiles();
                 return;
             }
-            if (Active) { ModMenuApi.Toast("Esci dal replay prima di registrare."); return; }
-            if (!Game.InWorld) { ModMenuApi.Toast("Entra in una partita per registrare."); return; }
-            string path = Path.Combine(ClipDir, "partita_" + DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".bwr");
-            if (_recorder.StartFile(path)) ModMenuApi.Toast("Registrazione della partita avviata.");
-            else ModMenuApi.Toast("Non riesco ad avviare la registrazione (vedi log).");
+            if (Active) { ModMenuApi.Toast("Leave the replay before recording."); return; }
+            if (!Game.InWorld) { ModMenuApi.Toast("Join a walk to record."); return; }
+            string path = Path.Combine(ClipDir, "walk_" + DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".bwr");
+            if (_recorder.StartFile(path)) ModMenuApi.Toast("Recording the walk.");
+            else ModMenuApi.Toast("Could not start recording (see the log).");
         }
 
         private void SaveClip()
@@ -507,13 +507,13 @@ namespace BigWalk.ModMenu.Replay
                 }
                 string path = Path.Combine(ClipDir, "clip_" + DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".bwr");
                 part.Save(path);
-                ModMenuApi.Toast($"Clip salvata ({part.Duration:0} s): {Path.GetFileName(path)}");
+                ModMenuApi.Toast($"Clip saved ({part.Duration:0} s): {Path.GetFileName(path)}");
                 ScanFiles();
             }
             catch (Exception ex)
             {
                 ModMenuApi.Log.LogError($"[Replay] Saving the clip failed: {ex}");
-                ModMenuApi.Toast("Salvataggio non riuscito (vedi log).");
+                ModMenuApi.Toast("Could not save (see the log).");
             }
         }
 
@@ -539,7 +539,7 @@ namespace BigWalk.ModMenu.Replay
             catch (Exception ex)
             {
                 ModMenuApi.Log.LogError($"[Replay] Could not load '{path}': {ex}");
-                ModMenuApi.Toast("Non riesco ad aprire la registrazione: " + ex.Message);
+                ModMenuApi.Toast("Could not open the recording: " + ex.Message);
             }
         }
 
@@ -570,16 +570,16 @@ namespace BigWalk.ModMenu.Replay
                 string name = Path.GetFileName(_exportDir);
                 // The frames become a video with ffmpeg on the Linux side (the game runs under Proton).
                 string script = "#!/bin/sh\n" +
-                                "# Unisce i fotogrammi in un video MP4 e poi li cancella. Richiede ffmpeg.\n" +
+                                "# Joins the frames into an MP4 video, then deletes them. Needs ffmpeg.\n" +
                                 "cd \"$(dirname \"$0\")\" || exit 1\n" +
                                 $"ffmpeg -y -framerate {_exportFps} -i frame_%06d.png -c:v libx264 -crf 17 -preset medium -pix_fmt yuv420p -vf \"scale=trunc(iw/2)*2:trunc(ih/2)*2\" \"../{name}.mp4\" \\\n" +
-                                "  && rm -f frame_*.png && echo \"Fatto: " + name + ".mp4\"\n";
-                File.WriteAllText(Path.Combine(_exportDir, "crea_video.sh"), script);
+                                "  && rm -f frame_*.png && echo \"Done: " + name + ".mp4\"\n";
+                File.WriteAllText(Path.Combine(_exportDir, "make_video.sh"), script);
             }
             catch (Exception ex) { ModMenuApi.Log.LogWarning($"[Replay] Could not write the ffmpeg script: {ex.Message}"); }
             ModMenuApi.Toast(cancelled
-                ? $"Esportazione interrotta a {_exportFrame} fotogrammi."
-                : $"{_exportFrame} fotogrammi salvati. Per il video: sh crea_video.sh nella cartella replay/video.", 8f);
+                ? $"Export stopped at {_exportFrame} frames."
+                : $"{_exportFrame} frames saved. For the video: sh make_video.sh in the folder replay/video.", 8f);
         }
 
         // ---- overlay ----
@@ -604,7 +604,7 @@ namespace BigWalk.ModMenu.Replay
             float rel = _time - _clip.Start, total = _clip.Duration;
             GUI.Label(new Rect(x + 10f, y + 4f, 260f, 20f), $"<b>REPLAY</b>  {rel:0.0} / {total:0.0} s   {_speed:0.##}x");
             GUI.Label(new Rect(x + 270f, y + 4f, w - 280f, 20f),
-                $"<size=11>Spazio: pausa • ← →: fotogramma • WASD + tasto destro: camera • {_replayKey.Key}: esci</size>");
+                $"<size=11>Space: pause • ← →: frame • WASD + right button: camera • {_replayKey.Key}: exit</size>");
 
             float slid = GUI.HorizontalSlider(new Rect(x + 10f, y + 28f, w - 20f, 14f), _time, _clip.Start, _clip.End);
             if (Mathf.Abs(slid - _time) > 0.001f) { _time = slid; _playing = false; }
@@ -621,15 +621,15 @@ namespace BigWalk.ModMenu.Replay
                 return hit;
             }
             if (Btn(_playing ? "⏸" : "▶", 34f)) _playing = !_playing;
-            if (Btn("Più lento", 70f)) _speed = StepSpeed(-1);
-            if (Btn("Più veloce", 76f)) _speed = StepSpeed(1);
-            if (Btn("Inizio qui", 74f)) { _in = Mathf.Min(_time, _out - 0.1f); }
-            if (Btn("Fine qui", 66f)) { _out = Mathf.Max(_time, _in + 0.1f); }
-            string camLabel = _cameraMode == CameraMode.Free ? "Camera: libera" : _cameraMode == CameraMode.Original ? "Camera: tua visuale" : $"Camera: segue {_followIndex + 1}";
+            if (Btn("Slower", 70f)) _speed = StepSpeed(-1);
+            if (Btn("Faster", 76f)) _speed = StepSpeed(1);
+            if (Btn("Start here", 74f)) { _in = Mathf.Min(_time, _out - 0.1f); }
+            if (Btn("End here", 66f)) { _out = Mathf.Max(_time, _in + 0.1f); }
+            string camLabel = _cameraMode == CameraMode.Free ? "Camera: free" : _cameraMode == CameraMode.Original ? "Camera: your view" : $"Camera: follows {_followIndex + 1}";
             if (Btn(camLabel, 132f)) NextCamera();
-            if (Btn("Salva clip", 78f)) SaveClip();
+            if (Btn("Save clip", 78f)) SaveClip();
             if (Btn($"Video {_exportFps} fps", 92f)) StartExport();
-            if (Btn("Esci", 50f)) StopPlayback();
+            if (Btn("Exit", 50f)) StopPlayback();
         }
 
         private float StepSpeed(int dir)
@@ -664,53 +664,53 @@ namespace BigWalk.ModMenu.Replay
         {
             bool changed = false;
 
-            ui.Header("Replay istantaneo");
+            ui.Header("Instant replay");
             int buffer = Mathf.Max(0, Array.IndexOf(BufferChoices, _recorder.BufferSeconds));
-            if (ui.Choice("Tieni in memoria", ref buffer, new[] { "spento", "ultimi 30 s", "ultimo minuto", "ultimi 2 minuti", "ultimi 5 minuti" }))
+            if (ui.Choice("Keep in memory", ref buffer, new[] { "off", "last 30 s", "last minute", "last 2 minutes", "last 5 minutes" }))
             {
                 _recorder.BufferSeconds = BufferChoices[buffer];
                 changed = true;
             }
-            ui.Note($"In memoria ora: {_recorder.BufferedSeconds:0} s ({_recorder.BufferedFrames} fotogrammi).");
+            ui.Note($"In memory now: {_recorder.BufferedSeconds:0} s ({_recorder.BufferedFrames} frames).");
             if (Active)
             {
-                if (ui.Button($"Esci dal replay ({_replayKey.Key})")) StopPlayback();
+                if (ui.Button($"Exit the replay ({_replayKey.Key})")) StopPlayback();
             }
-            else if (ui.Button($"Rivedi adesso ({_replayKey.Key})")) StartInstantReplay();
-            changed |= ui.Toggle("Ripeti in ciclo", ref _loop);
+            else if (ui.Button($"Replay now ({_replayKey.Key})")) StartInstantReplay();
+            changed |= ui.Toggle("Loop", ref _loop);
 
-            ui.Header("Registra la partita");
+            ui.Header("Record the walk");
             if (_recorder.RecordingToFile)
             {
                 int s = (int)_recorder.FileSeconds;
-                ui.Label($"<color=#ff6666>● In registrazione</color>  {s / 60}:{s % 60:00}");
+                ui.Label($"<color=#ff6666>● Recording</color>  {s / 60}:{s % 60:00}");
             }
-            if (ui.Button(_recorder.RecordingToFile ? $"Ferma e salva ({_recordKey.Key})" : $"Avvia registrazione ({_recordKey.Key})")) ToggleRecording();
-            if (ui.Slider($"Durata massima: {_maxMinutes:0} minuti", ref _maxMinutes, 5f, 120f, 5f)) changed = true;
-            ui.Note("Registra i movimenti, non un video: pesa poco e la rivedi da qualsiasi angolo. Le voci non vengono registrate.", 2);
+            if (ui.Button(_recorder.RecordingToFile ? $"Stop and save ({_recordKey.Key})" : $"Start recording ({_recordKey.Key})")) ToggleRecording();
+            if (ui.Slider($"Maximum length: {_maxMinutes:0} minutes", ref _maxMinutes, 5f, 120f, 5f)) changed = true;
+            ui.Note("It records movement, not video: small files that you can watch from any angle. Voices are not recorded.", 2);
 
-            ui.Header("Qualità");
+            ui.Header("Quality");
             int rate = Mathf.Max(0, Array.IndexOf(RateChoices, _recorder.Rate));
-            if (ui.Choice("Campioni al secondo", ref rate, new[] { "15", "20", "30", "60" }))
+            if (ui.Choice("Samples per second", ref rate, new[] { "15", "20", "30", "60" }))
             {
                 _recorder.Rate = RateChoices[rate];
                 _recorder.Clear();
                 changed = true;
             }
-            changed |= ui.Toggle("Registra anche gli oggetti vicini", ref _recorder.WithProps);
+            changed |= ui.Toggle("Record nearby objects too", ref _recorder.WithProps);
             int fps = _exportFps == 60 ? 1 : 0;
-            if (ui.Choice("Video esportato", ref fps, new[] { "30 fps", "60 fps" }))
+            if (ui.Choice("Exported video", ref fps, new[] { "30 fps", "60 fps" }))
             {
                 _exportFps = fps == 1 ? 60 : 30;
                 changed = true;
             }
-            ui.Note("Il video esce come fotogrammi PNG in replay/video (circa 2-3 MB l'uno): poi \"sh crea_video.sh\" li unisce in un MP4 e li cancella. Serve ffmpeg.", 3);
+            ui.Note("The video comes out as PNG frames in replay/video (about 2-3 MB each): then \"sh make_video.sh\" joins them into an MP4 and deletes them. Needs ffmpeg.", 3);
 
-            ui.Header("Tasti");
+            ui.Header("Keys");
             changed |= ui.HotkeyRow(_replayKey);
             changed |= ui.HotkeyRow(_recordKey);
 
-            ui.Header($"Registrazioni salvate ({_files.Count})");
+            ui.Header($"Saved recordings ({_files.Count})");
             for (int i = 0; i < _files.Count && i < 25; i++)
             {
                 string file = _files[i];
@@ -718,7 +718,7 @@ namespace BigWalk.ModMenu.Replay
                 try { kb = new FileInfo(file).Length / 1024; } catch { }
                 ui.Label($"{Path.GetFileNameWithoutExtension(file)}  <color=#aaaaaa>{(kb >= 1024 ? $"{kb / 1024f:0.0} MB" : kb + " KB")}</color>");
                 bool confirming = _confirmDelete == file;
-                int hit = ui.Buttons("Guarda", confirming ? "<b>Conferma</b>" : "Elimina");
+                int hit = ui.Buttons("Watch", confirming ? "<b>Confirm</b>" : "Delete");
                 if (hit == 0) LoadAndPlay(file);
                 else if (hit == 1)
                 {
@@ -731,7 +731,7 @@ namespace BigWalk.ModMenu.Replay
                     else _confirmDelete = file;
                 }
             }
-            ui.Note("Una registrazione si rivede sui personaggi presenti ora, nello stesso ordine: servono almeno tanti giocatori quanti ce n'erano.", 2);
+            ui.Note("A recording plays back on the characters present now, in the same order: you need at least as many players as there were.", 2);
 
             if (changed) Dirty = true;
         }

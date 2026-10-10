@@ -62,7 +62,7 @@ namespace BigWalk.ModMenu
 
     public static class ModMenuApi
     {
-        public const string Version = "1.3.0";
+        public const string Version = "1.4.0";
         public static ManualLogSource Log;
         public static string RootPath = "";
 
@@ -102,6 +102,26 @@ namespace BigWalk.ModMenu
 
         /// <summary>Keeps every mod GUI off screen for the next frames (used around screenshots).</summary>
         public static void HideGuiForFrames(int frames) => _hideGuiUntilFrame = Mathf.Max(_hideGuiUntilFrame, Time.frameCount + frames);
+
+        /// <summary>
+        /// Path of a data folder or file that had an Italian name up to 1.3.0: what is found under the
+        /// old name is moved to the new one, so nobody loses photos or recordings by updating.
+        /// </summary>
+        public static string Renamed(string parent, string name, string oldName)
+        {
+            string path = Path.Combine(parent, name);
+            try
+            {
+                string old = Path.Combine(parent, oldName);
+                if (Directory.Exists(old) && !Directory.Exists(path)) Directory.Move(old, path);
+                else if (File.Exists(old) && !File.Exists(path)) File.Move(old, path);
+            }
+            catch (Exception ex)
+            {
+                Log.LogWarning($"Could not rename '{oldName}' to '{name}' in {parent}: {ex.Message}");
+            }
+            return path;
+        }
 
         public static void LogOnce(string key, string message)
         {
@@ -435,9 +455,9 @@ namespace BigWalk.ModMenu
                 _ui.Begin(2f, 2f, innerW - 4f);
                 if (current.Disabled)
                 {
-                    _ui.Label("<color=#ff8888>Modulo in pausa per troppi errori.</color>");
+                    _ui.Label("<color=#ff8888>Tab paused after too many errors.</color>");
                     _ui.Note(current.LastError ?? "", 4);
-                    if (_ui.Button("Riattiva il modulo"))
+                    if (_ui.Button("Restart the tab"))
                     {
                         current.Disabled = false;
                         current.Faults = 0;
@@ -450,7 +470,7 @@ namespace BigWalk.ModMenu
                     if (m.Faults > 0 && m.LastError != null)
                     {
                         _ui.Space();
-                        _ui.Note("<color=#ffaa66>Ultimo errore: " + m.LastError + "</color>", 3);
+                        _ui.Note("<color=#ffaa66>Last error: " + m.LastError + "</color>", 3);
                     }
                 }
                 GUI.EndScrollView();
@@ -469,11 +489,11 @@ namespace BigWalk.ModMenu
         public static GeneralModule Instance;
 
         public override string Id => "general";
-        public override string Title => "Generale";
+        public override string Title => "General";
         public override int Order => 0;
 
-        public readonly Hotkey MenuKey = new Hotkey("Menu", "Apri/chiudi il menu", KeyCode.F8);
-        public readonly Hotkey MenuKeyAlt = new Hotkey("MenuAlt", "Apri/chiudi (secondo tasto)", KeyCode.Insert);
+        public readonly Hotkey MenuKey = new Hotkey("Menu", "Open/close the menu", KeyCode.F8);
+        public readonly Hotkey MenuKeyAlt = new Hotkey("MenuAlt", "Open/close (second key)", KeyCode.Insert);
         public float UiScale;          // 0 = automatic
         public bool BlockMovement;
         /// <summary>Send my look, face and emotes to friends who run the mod.</summary>
@@ -540,50 +560,50 @@ namespace BigWalk.ModMenu
             ui.Header("Menu");
             if (ui.HotkeyRow(MenuKey)) Dirty = true;
             if (ui.HotkeyRow(MenuKeyAlt)) Dirty = true;
-            ui.Note("Clicca sul tasto e premi quello nuovo. Esc annulla, Backspace toglie il tasto.", 2);
+            ui.Note("Click a key, then press the new one. Esc cancels, Backspace clears the key.", 2);
 
             float scale = UiScale > 0.1f ? UiScale : 0.9f;
-            string scaleLabel = UiScale > 0.1f ? $"Grandezza del menu: {Mathf.RoundToInt(UiScale * 100f)}%" : "Grandezza del menu: automatica";
+            string scaleLabel = UiScale > 0.1f ? $"Menu size: {Mathf.RoundToInt(UiScale * 100f)}%" : "Menu size: automatic";
             if (ui.Slider(scaleLabel, ref scale, 0.9f, 2.5f, 0.1f))
             {
                 UiScale = scale < 0.95f ? 0f : Mathf.Round(scale * 10f) / 10f;
                 Dirty = true;
             }
-            if (ui.Toggle("Blocca anche il movimento a menu aperto", ref BlockMovement)) Dirty = true;
-            ui.Note("La visuale resta sempre ferma mentre il menu è aperto.");
-            ui.Note("Il menu si sposta trascinandolo dalla barra del titolo.");
-            if (WindowX >= 0f && ui.Button("Rimetti il menu al suo posto"))
+            if (ui.Toggle("Also block movement while the menu is open", ref BlockMovement)) Dirty = true;
+            ui.Note("The view always stays still while the menu is open.");
+            ui.Note("Drag the menu by its title bar to move it.");
+            if (WindowX >= 0f && ui.Button("Put the menu back in its place"))
             {
                 WindowX = WindowY = -1f;
                 Dirty = true;
             }
 
-            ui.Header("Amici con la mod");
-            ui.Label("Rete: " + Net.Status);
-            if (ui.Toggle("Condividi il mio aspetto", ref ShareMine)) Dirty = true;
-            if (ui.Toggle("Mostra l'aspetto degli amici", ref ShowFriends)) Dirty = true;
-            ui.Note("Funziona solo se anche l'host ha la mod, e tutti nella stessa versione. Passano aspetto, faccia, emote e fumetti del tuo personaggio.", 3);
+            ui.Header("Friends with the mod");
+            ui.Label("Network: " + Net.Status);
+            if (ui.Toggle("Share my look", ref ShareMine)) Dirty = true;
+            if (ui.Toggle("Show my friends' looks", ref ShowFriends)) Dirty = true;
+            ui.Note("Only works if the host has the mod too, and everyone runs the same version. Your character's look, face, emotes and speech bubbles are sent.", 3);
 
-            int profileHit = ui.Buttons("Esporta il mio profilo", "Rileggi i profili");
+            int profileHit = ui.Buttons("Export my profile", "Reload profiles");
             if (profileHit == 0)
             {
                 string path = Profiles.ExportMine(out string problem);
-                _profileNote = path != null ? "Salvato: profili/" + System.IO.Path.GetFileName(path) : problem;
+                _profileNote = path != null ? "Saved: profiles/" + System.IO.Path.GetFileName(path) : problem;
             }
             else if (profileHit == 1)
             {
-                _profileNote = Profiles.LoadAll() + " profili di amici caricati.";
+                _profileNote = Profiles.LoadAll() + " friend profiles loaded.";
             }
             if (!string.IsNullOrEmpty(_profileNote)) ui.Note(_profileNote);
-            ui.Note("Riserva per quando la rete non c'\u00e8: mandi il tuo file .bwp agli amici, loro lo mettono in BepInEx/plugins/BigWalkModMenu/profili.", 3);
+            ui.Note("Fallback for when the network is not available: send your .bwp file to friends, they put it in BepInEx/plugins/BigWalkModMenu/profiles.", 3);
 
-            ui.Header("Moduli installati");
+            ui.Header("Installed tabs");
             foreach (MenuModule m in ModMenuApi.Modules)
             {
-                string state = m.Disabled ? "<color=#ff8888>in pausa</color>" : (m.Faults > 0 ? $"<color=#ffaa66>{m.Faults} errori</color>" : "<color=#88ff88>ok</color>");
+                string state = m.Disabled ? "<color=#ff8888>paused</color>" : (m.Faults > 0 ? $"<color=#ffaa66>{m.Faults} errors</color>" : "<color=#88ff88>ok</color>");
                 ui.Label($"{m.Title}  <color=#aaaaaa>({m.Id})</color>  {state}");
             }
-            ui.Note("Ogni modulo è una DLL in BepInEx/plugins/BigWalkModMenu. Togli la DLL per togliere la scheda.", 2);
+            ui.Note("Each tab is a DLL in BepInEx/plugins/BigWalkModMenu. Delete the DLL to remove the tab.", 2);
 
         }
     }

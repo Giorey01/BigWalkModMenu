@@ -50,7 +50,7 @@ namespace BigWalk.FaceMaskMod
         {
             get
             {
-                string p = Path.Combine(Plugin.PluginPath, "amici");
+                string p = ModMenuApi.Renamed(Plugin.PluginPath, "friends", "amici");
                 Directory.CreateDirectory(p);
                 return p;
             }
@@ -319,7 +319,7 @@ namespace BigWalk.FaceMaskMod
             FaceEntry old = rf.Entry;
             rf.Entry = new FaceEntry
             {
-                Name = "amico_" + sender,
+                Name = "friend_" + sender,
                 Source = rgba,
                 Width = width,
                 Height = height,

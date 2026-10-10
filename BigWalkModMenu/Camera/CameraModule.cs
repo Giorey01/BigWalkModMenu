@@ -9,7 +9,7 @@ using UnityEngine.Rendering.Universal;
 
 namespace BigWalk.ModMenu.Camera
 {
-    [BepInPlugin("com.bigwalk.modmenu.camera", "Big Walk Mod Menu - Telecamera", ModMenuApi.Version)]
+    [BepInPlugin("com.bigwalk.modmenu.camera", "Big Walk Mod Menu - Camera", ModMenuApi.Version)]
     [BepInDependency(BigWalk.ModMenu.Plugin.Guid)]
     public class Plugin : BasePlugin
     {
@@ -24,14 +24,14 @@ namespace BigWalk.ModMenu.Camera
         private enum Mode { Off, Selfie, ThirdPerson, Free }
 
         public override string Id => "camera";
-        public override string Title => "Telecamera";
+        public override string Title => "Camera";
         public override int Order => 30;
 
         private readonly Hotkey _selfieKey = new Hotkey("Selfie", "Selfie", KeyCode.F6);
-        private readonly Hotkey _thirdKey = new Hotkey("Third", "Terza persona", KeyCode.F5);
-        private readonly Hotkey _freeKey = new Hotkey("Free", "Modalità foto (camera libera)", KeyCode.F7);
-        private readonly Hotkey _shotKey = new Hotkey("Shot", "Scatta foto", KeyCode.F9);
-        private readonly Hotkey _hudKey = new Hotkey("Hud", "Nascondi/mostra interfaccia", KeyCode.F10);
+        private readonly Hotkey _thirdKey = new Hotkey("Third", "Third person", KeyCode.F5);
+        private readonly Hotkey _freeKey = new Hotkey("Free", "Photo mode (free camera)", KeyCode.F7);
+        private readonly Hotkey _shotKey = new Hotkey("Shot", "Take a photo", KeyCode.F9);
+        private readonly Hotkey _hudKey = new Hotkey("Hud", "Hide/show the interface", KeyCode.F10);
 
         private Mode _mode;
         private readonly object _rigOwner = new object();
@@ -68,7 +68,7 @@ namespace BigWalk.ModMenu.Camera
         {
             get
             {
-                string p = Path.Combine(DataPath, "foto");
+                string p = ModMenuApi.Renamed(DataPath, "photos", "foto");
                 Directory.CreateDirectory(p);
                 return p;
             }
@@ -111,7 +111,7 @@ namespace BigWalk.ModMenu.Camera
             if (mode == _mode) mode = Mode.Off; // the same key again switches the mode off
             if (mode != Mode.Off && !Game.InWorld)
             {
-                ModMenuApi.Toast("Entra in una partita per usare la telecamera.");
+                ModMenuApi.Toast("Join a walk to use the camera.");
                 return;
             }
 
@@ -125,7 +125,7 @@ namespace BigWalk.ModMenu.Camera
 
             if (!CameraRig.Acquire(_rigOwner))
             {
-                ModMenuApi.Toast("Telecamera del giocatore non trovata.");
+                ModMenuApi.Toast("Player camera not found.");
                 return;
             }
             _mode = mode;
@@ -140,7 +140,7 @@ namespace BigWalk.ModMenu.Camera
                 _freeFov = CameraRig.OriginalFov;
                 // The keyboard and mouse now drive the camera instead of the character.
                 InputLock.Set(_rigOwner, true, true, true);
-                ModMenuApi.Toast("Camera libera: WASD muovi, Q/E giù/su, tasto destro per guardare, rotella zoom, Shift veloce.", 5f);
+                ModMenuApi.Toast("Free camera: WASD move, Q/E down/up, right mouse button to look, wheel to zoom, Shift fast.", 5f);
             }
             else
             {
@@ -300,7 +300,7 @@ namespace BigWalk.ModMenu.Camera
                 catch (Exception ex)
                 {
                     ModMenuApi.Log.LogError($"[Camera] Screenshot failed: {ex}");
-                    ModMenuApi.Toast("Foto non riuscita (vedi log).");
+                    ModMenuApi.Toast("Could not take the photo (see the log).");
                     _lastShot = null;
                 }
                 // The capture happens at the end of this frame: keep everything hidden a little longer.
@@ -310,7 +310,7 @@ namespace BigWalk.ModMenu.Camera
             }
 
             if (_shotRestoreHud) _hideHud = false;
-            if (_lastShot != null) ModMenuApi.Toast("Foto salvata: " + Path.GetFileName(_lastShot));
+            if (_lastShot != null) ModMenuApi.Toast("Photo saved: " + Path.GetFileName(_lastShot));
             _shotStage = 0;
             _nextScan = Time.unscaledTime + 1f;
         }
@@ -332,7 +332,7 @@ namespace BigWalk.ModMenu.Camera
                 var r = new Rect(12f, Screen.height - 34f, 620f, 22f);
                 Ui.Tint(r, new Color(0f, 0f, 0f, 0.45f));
                 GUI.Label(new Rect(r.x + 6f, r.y + 1f, r.width, 20f),
-                    $"<size=11>Camera libera • FOV {_freeFov:0}° • Z/C inclina, X raddrizza • {_shotKey.Key}: foto • {_freeKey.Key}: esci</size>");
+                    $"<size=11>Free camera • FOV {_freeFov:0}° • Z/C tilt, X level • {_shotKey.Key}: photo • {_freeKey.Key}: exit</size>");
             }
         }
 
@@ -368,7 +368,7 @@ namespace BigWalk.ModMenu.Camera
 
         private void DrawAlbum(Ui ui)
         {
-            ui.Header($"Album ({_photos.Count} foto)");
+            ui.Header($"Album ({_photos.Count} photos)");
             if (_selected != null && File.Exists(_selected))
             {
                 if (!Game.Alive(_selectedTex)) _selectedTex = Images.LoadTexture(_selected, 512);
@@ -379,7 +379,7 @@ namespace BigWalk.ModMenu.Camera
                 }
                 ui.Note(Path.GetFileName(_selected));
                 bool confirming = _confirmDelete == _selected;
-                int hit = ui.Buttons("Chiudi", confirming ? "<b>Conferma elimina</b>" : "Elimina");
+                int hit = ui.Buttons("Close", confirming ? "<b>Confirm delete</b>" : "Delete");
                 if (hit == 0) CloseSelected();
                 else if (hit == 1)
                 {
@@ -397,7 +397,7 @@ namespace BigWalk.ModMenu.Camera
 
             if (_photos.Count == 0)
             {
-                ui.Note("Ancora nessuna foto. Scattane una con il tasto qui sopra.");
+                ui.Note("No photos yet. Take one with the button above.");
                 return;
             }
 
@@ -422,7 +422,7 @@ namespace BigWalk.ModMenu.Camera
                     _confirmDelete = null;
                 }
             }
-            if (_photos.Count > shown) ui.Note($"Mostrate le {shown} più recenti.");
+            if (_photos.Count > shown) ui.Note($"Showing the {shown} most recent.");
         }
 
         private void CloseSelected()
@@ -433,18 +433,18 @@ namespace BigWalk.ModMenu.Camera
             _confirmDelete = null;
         }
 
-        private void OpenFolder() => Game.OpenFolder(PhotoDir, "BepInEx/plugins/BigWalkModMenu/camera/foto");
+        private void OpenFolder() => Game.OpenFolder(PhotoDir, "BepInEx/plugins/BigWalkModMenu/camera/photos");
 
         // ---- menu ----
 
-        private static readonly string[] SuperSizes = { "schermo (1x)", "doppia (2x)", "tripla (3x)", "quadrupla (4x)" };
+        private static readonly string[] SuperSizes = { "screen (1x)", "double (2x)", "triple (3x)", "quadruple (4x)" };
 
         public override void DrawTab(Ui ui)
         {
             bool changed = false;
 
-            ui.Header("Modalità");
-            string[] names = { "Normale", "Selfie", "Terza persona", "Foto (libera)" };
+            ui.Header("Mode");
+            string[] names = { "Normal", "Selfie", "Third person", "Photo (free)" };
             for (int i = 0; i < names.Length; i++) if ((int)_mode == i) names[i] = "<b>[" + names[i] + "]</b>";
             int hit = ui.Buttons(names[0], names[1]);
             if (hit == 0 && _mode != Mode.Off) SetMode(_mode);
@@ -456,39 +456,39 @@ namespace BigWalk.ModMenu.Camera
             if (_mode == Mode.Selfie || _mode == Mode.Off)
             {
                 ui.Header("Selfie");
-                changed |= ui.Slider($"Distanza: {_selfieDistance:0.0} m", ref _selfieDistance, 0.5f, 8f, 0.1f);
-                changed |= ui.Slider($"Altezza: {_selfieHeight:+0.00;-0.00;0} m", ref _selfieHeight, -1f, 2f, 0.05f);
-                ui.Slider($"Angolo attorno a te: {_selfieAngle:0}°", ref _selfieAngle, -180f, 180f, 5f);
-                changed |= ui.Slider($"Campo visivo: {_selfieFov:0}°", ref _selfieFov, 15f, 110f, 1f);
+                changed |= ui.Slider($"Distance: {_selfieDistance:0.0} m", ref _selfieDistance, 0.5f, 8f, 0.1f);
+                changed |= ui.Slider($"Height: {_selfieHeight:+0.00;-0.00;0} m", ref _selfieHeight, -1f, 2f, 0.05f);
+                ui.Slider($"Angle around you: {_selfieAngle:0}°", ref _selfieAngle, -180f, 180f, 5f);
+                changed |= ui.Slider($"Field of view: {_selfieFov:0}°", ref _selfieFov, 15f, 110f, 1f);
             }
             if (_mode == Mode.ThirdPerson)
             {
-                ui.Header("Terza persona");
-                changed |= ui.Slider($"Distanza: {_thirdDistance:0.0} m", ref _thirdDistance, 0.8f, 15f, 0.1f);
-                changed |= ui.Slider($"Altezza: {_thirdHeight:+0.00;-0.00;0} m", ref _thirdHeight, -1f, 4f, 0.05f);
-                changed |= ui.Slider($"Campo visivo: {_thirdFov:0}°", ref _thirdFov, 15f, 110f, 1f);
+                ui.Header("Third person");
+                changed |= ui.Slider($"Distance: {_thirdDistance:0.0} m", ref _thirdDistance, 0.8f, 15f, 0.1f);
+                changed |= ui.Slider($"Height: {_thirdHeight:+0.00;-0.00;0} m", ref _thirdHeight, -1f, 4f, 0.05f);
+                changed |= ui.Slider($"Field of view: {_thirdFov:0}°", ref _thirdFov, 15f, 110f, 1f);
             }
             if (_mode == Mode.Free)
             {
-                ui.Header("Camera libera");
-                ui.Slider($"Campo visivo: {_freeFov:0}°", ref _freeFov, 8f, 120f, 1f);
-                ui.Slider($"Inclinazione: {_freeRoll:0}°", ref _freeRoll, -90f, 90f, 1f);
-                changed |= ui.Slider($"Velocità: {_freeSpeed:0.0} m/s", ref _freeSpeed, 0.5f, 30f, 0.5f);
-                ui.Note("WASD muovi, Q/E giù/su, tasto destro del mouse per guardare, rotella per lo zoom, Shift veloce, Ctrl lento. Il personaggio resta fermo.", 3);
+                ui.Header("Free camera");
+                ui.Slider($"Field of view: {_freeFov:0}°", ref _freeFov, 8f, 120f, 1f);
+                ui.Slider($"Tilt: {_freeRoll:0}°", ref _freeRoll, -90f, 90f, 1f);
+                changed |= ui.Slider($"Speed: {_freeSpeed:0.0} m/s", ref _freeSpeed, 0.5f, 30f, 0.5f);
+                ui.Note("WASD move, Q/E down/up, right mouse button to look, wheel to zoom, Shift fast, Ctrl slow. The character stays where it is.", 3);
             }
 
-            ui.Header("Foto");
-            if (ui.Button($"Scatta ora ({_shotKey.Key})")) TakePhoto();
+            ui.Header("Photos");
+            if (ui.Button($"Take one now ({_shotKey.Key})")) TakePhoto();
             int size = _superSize - 1;
-            if (ui.Choice("Risoluzione", ref size, SuperSizes)) { _superSize = size + 1; changed = true; }
-            changed |= ui.Toggle("Togli l'interfaccia del gioco dalle foto", ref _hideHudInPhotos);
-            if (ui.Button("Apri la cartella delle foto")) OpenFolder();
+            if (ui.Choice("Resolution", ref size, SuperSizes)) { _superSize = size + 1; changed = true; }
+            changed |= ui.Toggle("Leave the game's interface out of photos", ref _hideHudInPhotos);
+            if (ui.Button("Open the photo folder")) OpenFolder();
 
-            ui.Header("Schermo");
-            ui.Toggle("Nascondi l'interfaccia del gioco", ref _hideHud);
-            changed |= ui.Toggle("Bande nere da film", ref _bars);
+            ui.Header("Screen");
+            ui.Toggle("Hide the game's interface", ref _hideHud);
+            changed |= ui.Toggle("Cinema black bars", ref _bars);
 
-            ui.Header("Tasti");
+            ui.Header("Keys");
             foreach (Hotkey k in new[] { _selfieKey, _thirdKey, _freeKey, _shotKey, _hudKey }) changed |= ui.HotkeyRow(k);
 
             DrawAlbum(ui);

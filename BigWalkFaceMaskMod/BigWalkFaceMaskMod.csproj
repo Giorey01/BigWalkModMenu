@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>BigWalk.FaceMaskMod</AssemblyName>
     <Description>Face mask mod for Big Walk</Description>
-    <Version>3.2.0</Version>
+    <Version>3.3.0</Version>
     <DebugType>none</DebugType>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

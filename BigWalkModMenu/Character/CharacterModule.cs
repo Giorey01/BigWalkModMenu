@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace BigWalk.ModMenu.Character
 {
-    [BepInPlugin("com.bigwalk.modmenu.character", "Big Walk Mod Menu - Personaggio", ModMenuApi.Version)]
+    [BepInPlugin("com.bigwalk.modmenu.character", "Big Walk Mod Menu - Character", ModMenuApi.Version)]
     [BepInDependency(BigWalk.ModMenu.Plugin.Guid)]
     public class Plugin : BasePlugin
     {
@@ -220,7 +220,7 @@ namespace BigWalk.ModMenu.Character
         }
 
         public override string Id => "character";
-        public override string Title => "Personaggio";
+        public override string Title => "Character";
         public override int Order => 20;
 
         public const byte LookMessage = 16;
@@ -239,7 +239,7 @@ namespace BigWalk.ModMenu.Character
         private MaterialPropertyBlock _block;
         private string _colourProperty;
         private int _slot, _colourTarget;
-        private static readonly string[] ColourTargets = { "Testa", "Busto", "Gambe", "Cappello", "Cappello (dettagli)", "Accessori", "Luce", "Scia" };
+        private static readonly string[] ColourTargets = { "Head", "Torso", "Legs", "Hat", "Hat (details)", "Accessories", "Light", "Trail" };
         private static readonly string[] PartNames = { "torso_mesh", "bottom_mesh", "localBottom_mesh", "left_hand_mesh", "right_hand_mesh", "local_left_hand_mesh", "local_right_hand_mesh", "left_foot_mesh", "right_foot_mesh", "nose_mesh" };
         private static readonly int[] PartGroups = { 0, 1, 1, 2, 2, 2, 2, 3, 3, 4 };
 
@@ -689,73 +689,73 @@ namespace BigWalk.ModMenu.Character
             for (int i = 0; i < 4; i++)
             {
                 PlayerCharacter pc = Solo.GetPlayerForSlot(i);
-                labels[i] = pc != null ? Game.PlayerLabel(pc, i) : $"Giocatore {i + 1} (assente)";
+                labels[i] = pc != null ? Game.PlayerLabel(pc, i) : $"Player {i + 1} (absent)";
             }
-            ui.Choice("Modifica", ref _slot, labels);
+            ui.Choice("Editing", ref _slot, labels);
             Look look = _looks[_slot];
             bool changed = false;
 
             PlayerCharacter editing = Solo.GetPlayerForSlot(_slot);
             if (editing != null && _slot == LocalSlot())
             {
-                if (Net.Ready && GeneralModule.ShareMine) ui.Note("<color=#88ff88>Questo \u00e8 il tuo aspetto: lo vedono anche gli amici con la mod.</color>");
+                if (Net.Ready && GeneralModule.ShareMine) ui.Note("<color=#88ff88>This is your look: friends with the mod see it too.</color>");
             }
             else if (editing != null && GeneralModule.ShowFriends && _remote.ContainsKey(Identity.NetId(editing)))
             {
-                ui.Note("<color=#ffee88>Questo amico ha scelto il suo aspetto, ed \u00e8 quello che vedi. Per usare il tuo, spegni \"Mostra l'aspetto degli amici\" in Generale.</color>", 3);
+                ui.Note("<color=#ffee88>This friend chose their own look, and that is what you see. To use yours instead, switch off \"Show my friends' looks\" in General.</color>", 3);
             }
 
-            ui.Header("Colori");
-            ui.Dropdown("character.colour", "Colore di", ColourTargets, ref _colourTarget);
+            ui.Header("Colours");
+            ui.Dropdown("character.colour", "Colour of", ColourTargets, ref _colourTarget);
             Tint tint = TintFor(look, _colourTarget);
             if (_colourTarget <= 2)
             {
-                changed |= ui.Toggle("Colore personalizzato", ref tint.On);
+                changed |= ui.Toggle("Custom colour", ref tint.On);
             }
             else if (_colourTarget >= 6)
             {
-                changed |= ui.Toggle(_colourTarget == 6 ? "Luce sulla testa" : "Scia", ref tint.On);
+                changed |= ui.Toggle(_colourTarget == 6 ? "Light on the head" : "Trail", ref tint.On);
             }
             if (ui.ColorWheel(ref tint.H, ref tint.S, ref tint.V))
             {
                 if (_colourTarget <= 2) tint.On = true;
                 changed = true;
             }
-            if (_colourTarget == 6) changed |= ui.Slider($"Potenza della luce: {Mathf.RoundToInt(look.GlowPower * 100f)}%", ref look.GlowPower, 0f, 3f, 0.1f);
-            if (_colourTarget == 7) changed |= ui.Slider($"Durata della scia: {look.TrailLength:0.0} s", ref look.TrailLength, 0.5f, 15f, 0.5f);
+            if (_colourTarget == 6) changed |= ui.Slider($"Light power: {Mathf.RoundToInt(look.GlowPower * 100f)}%", ref look.GlowPower, 0f, 3f, 0.1f);
+            if (_colourTarget == 7) changed |= ui.Slider($"Trail length: {look.TrailLength:0.0} s", ref look.TrailLength, 0.5f, 15f, 0.5f);
 
-            ui.Header("Proporzioni");
-            changed |= ui.Slider($"Busto: {Pct(look.Torso)}", ref look.Torso, 0.3f, 3f, 0.05f);
-            changed |= ui.Slider($"Bacino: {Pct(look.Bottom)}", ref look.Bottom, 0.3f, 3f, 0.05f);
-            changed |= ui.Slider($"Mani: {Pct(look.Hands)}", ref look.Hands, 0.3f, 4f, 0.05f);
-            changed |= ui.Slider($"Piedi: {Pct(look.Feet)}", ref look.Feet, 0.3f, 4f, 0.05f);
-            changed |= ui.Slider($"Spessore di braccia e gambe: {Pct(look.Limbs)}", ref look.Limbs, 0.3f, 4f, 0.05f);
-            changed |= ui.Slider($"Naso, grandezza: {Pct(look.NoseSize)}", ref look.NoseSize, 0.2f, 5f, 0.05f);
-            changed |= ui.Slider($"Naso, lunghezza: {Pct(look.NoseLength)}", ref look.NoseLength, 0.2f, 8f, 0.1f);
-            if (ui.Button("Proporzioni originali"))
+            ui.Header("Proportions");
+            changed |= ui.Slider($"Torso: {Pct(look.Torso)}", ref look.Torso, 0.3f, 3f, 0.05f);
+            changed |= ui.Slider($"Hips: {Pct(look.Bottom)}", ref look.Bottom, 0.3f, 3f, 0.05f);
+            changed |= ui.Slider($"Hands: {Pct(look.Hands)}", ref look.Hands, 0.3f, 4f, 0.05f);
+            changed |= ui.Slider($"Feet: {Pct(look.Feet)}", ref look.Feet, 0.3f, 4f, 0.05f);
+            changed |= ui.Slider($"Arm and leg thickness: {Pct(look.Limbs)}", ref look.Limbs, 0.3f, 4f, 0.05f);
+            changed |= ui.Slider($"Nose size: {Pct(look.NoseSize)}", ref look.NoseSize, 0.2f, 5f, 0.05f);
+            changed |= ui.Slider($"Nose length: {Pct(look.NoseLength)}", ref look.NoseLength, 0.2f, 8f, 0.1f);
+            if (ui.Button("Original proportions"))
             {
                 look.Torso = look.Bottom = look.Hands = look.Feet = look.Limbs = look.NoseSize = look.NoseLength = 1f;
                 changed = true;
             }
-            ui.Note("La grandezza della testa è nella scheda Facce.");
+            ui.Note("Head size is in the Faces tab.");
 
-            ui.Header("Cappello");
-            changed |= ui.Dropdown("character.hat", "Cappello", Wardrobe.HatNames, ref look.Hat);
+            ui.Header("Hat");
+            changed |= ui.Dropdown("character.hat", "Hat", Wardrobe.HatNames, ref look.Hat);
             if (look.Hat != 0)
             {
-                changed |= ui.Slider($"Grandezza: {Pct(look.HatSize)}", ref look.HatSize, 0.4f, 3f, 0.05f);
-                changed |= ui.Slider($"Altezza: {look.HatHeight:+0.00;-0.00;0}", ref look.HatHeight, -0.6f, 1.5f, 0.02f);
+                changed |= ui.Slider($"Size: {Pct(look.HatSize)}", ref look.HatSize, 0.4f, 3f, 0.05f);
+                changed |= ui.Slider($"Height: {look.HatHeight:+0.00;-0.00;0}", ref look.HatHeight, -0.6f, 1.5f, 0.02f);
             }
 
-            ui.Header("Accessori");
+            ui.Header("Accessories");
             for (int i = 0; i < look.Accessories.Length; i++)
             {
                 changed |= ui.Toggle(Wardrobe.AccessoryNames[i], ref look.Accessories[i]);
             }
-            ui.Note("I colori di cappello e accessori si scelgono qui sopra, in \"Colore di\".");
+            ui.Note("Hat and accessory colours are chosen above, under \"Colour of\".");
 
             ui.Space();
-            int hit = ui.Buttons("Copia su tutti", "Togli tutto");
+            int hit = ui.Buttons("Copy to everyone", "Remove everything");
             if (hit == 0)
             {
                 var c = new ModConfig(System.IO.Path.Combine(DataPath, "_copy.tmp"));

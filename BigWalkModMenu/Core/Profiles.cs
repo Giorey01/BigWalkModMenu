@@ -6,7 +6,7 @@ using System.Text;
 namespace BigWalk.ModMenu
 {
     /// <summary>
-    /// A player's look saved to a file that friends can drop into their own "profili" folder. It is the
+    /// A player's look saved to a file that friends can drop into their own "profiles" folder. It is the
     /// fallback for when the live channel is not available (for instance the host has no mod).
     /// Each module contributes a named part; a profile file is as untrusted as a network message.
     ///
@@ -28,7 +28,7 @@ namespace BigWalk.ModMenu
         {
             get
             {
-                string p = Path.Combine(ModMenuApi.RootPath, "profili");
+                string p = ModMenuApi.Renamed(ModMenuApi.RootPath, "profiles", "profili");
                 Directory.CreateDirectory(p);
                 return p;
             }
@@ -53,7 +53,7 @@ namespace BigWalk.ModMenu
             problem = null;
             PlayerCharacter me = Game.LocalPlayer;
             string key = Identity.Key(me);
-            if (!IsKey(key)) { problem = "Entra in una partita: serve il tuo ID di gioco."; return null; }
+            if (!IsKey(key)) { problem = "Join a walk first: your game ID is needed."; return null; }
 
             var w = new WireWriter();
             w.Raw(Encoding.ASCII.GetBytes(Magic)).Text(key, 24).Text(Identity.Name(me), 40);
@@ -78,7 +78,7 @@ namespace BigWalk.ModMenu
             }
             catch (Exception ex)
             {
-                problem = "Scrittura non riuscita: " + ex.Message;
+                problem = "Could not write the file: " + ex.Message;
                 return null;
             }
         }

@@ -92,9 +92,9 @@ namespace BigWalk.ModMenu.Replay
             using (var gz = new GZipStream(file, CompressionMode.Decompress))
             using (var r = new BinaryReader(gz, Encoding.UTF8))
             {
-                if (Encoding.ASCII.GetString(r.ReadBytes(4)) != Magic) throw new InvalidDataException("non è una registrazione di Big Walk Mod Menu");
+                if (Encoding.ASCII.GetString(r.ReadBytes(4)) != Magic) throw new InvalidDataException("not a Big Walk Mod Menu recording");
                 int bones = r.ReadInt32();
-                if (bones < 0 || bones > 4096) throw new InvalidDataException("file rovinato");
+                if (bones < 0 || bones > 4096) throw new InvalidDataException("damaged file");
                 clip.BonePaths = new string[bones];
                 for (int i = 0; i < bones; i++) clip.BonePaths[i] = r.ReadString();
 

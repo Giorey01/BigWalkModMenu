@@ -104,7 +104,7 @@ namespace BigWalk.ModMenu
             {
                 ModMenuApi.Log.LogWarning($"[Game] Could not open '{path}': {ex.Message}");
             }
-            ModMenuApi.Toast("Cartella: " + shortName, 6f);
+            ModMenuApi.Toast("Folder: " + shortName, 6f);
         }
 
         public static Camera PlayerCamera
@@ -140,7 +140,7 @@ namespace BigWalk.ModMenu
         {
             bool local = false;
             try { local = pc != null && pc.isLocalPlayer; } catch { }
-            return local ? $"Giocatore {index + 1} (tu)" : $"Giocatore {index + 1}";
+            return local ? $"Player {index + 1} (you)" : $"Player {index + 1}";
         }
 
         public static Transform HeadBone(PlayerCharacter pc)

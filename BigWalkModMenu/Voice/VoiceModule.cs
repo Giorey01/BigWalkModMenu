@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace BigWalk.ModMenu.Voice
 {
-    [BepInPlugin("com.bigwalk.modmenu.voice", "Big Walk Mod Menu - Voce", ModMenuApi.Version)]
+    [BepInPlugin("com.bigwalk.modmenu.voice", "Big Walk Mod Menu - Voice", ModMenuApi.Version)]
     [BepInDependency(BigWalk.ModMenu.Plugin.Guid)]
     public class Plugin : BasePlugin
     {
@@ -55,10 +55,10 @@ namespace BigWalk.ModMenu.Voice
         public static VoiceModule Instance;
 
         public override string Id => "voice";
-        public override string Title => "Voce";
+        public override string Title => "Voice";
         public override int Order => 55;
 
-        private readonly Hotkey _muteKey = new Hotkey("MuteAll", "Silenzia/riattiva tutte le voci", KeyCode.None);
+        private readonly Hotkey _muteKey = new Hotkey("MuteAll", "Mute/unmute every voice", KeyCode.None);
         private bool _enabled = true, _muteAll, _showRemembered;
         private float _defaultVolume = 1f;
 
@@ -199,7 +199,7 @@ namespace BigWalk.ModMenu.Voice
             if (_muteKey.Down)
             {
                 _muteAll = !_muteAll;
-                ModMenuApi.Toast(_muteAll ? "Voci degli altri: silenziate" : "Voci degli altri: riattivate");
+                ModMenuApi.Toast(_muteAll ? "Other players' voices: muted" : "Other players' voices: back on");
             }
 
             if (Time.unscaledTime < _nextSweep) return;
@@ -243,13 +243,13 @@ namespace BigWalk.ModMenu.Voice
             float before = volume;
             float t = ToSlider(volume);
             float slid = t;
-            string text = volume <= 0f ? label + ": <b>muto</b>" : label + ": <b>" + Percent(volume) + "</b>";
+            string text = volume <= 0f ? label + ": <b>muted</b>" : label + ": <b>" + Percent(volume) + "</b>";
             Rect r = ui.Reserve(34f);
             GUI.Label(new Rect(r.x, r.y, r.width, 18f), text);
             slid = GUI.HorizontalSlider(new Rect(r.x + 2f, r.y + 20f, r.width - 4f, 14f), t, 0f, 1f);
             if (Mathf.Abs(slid - t) > 0.0005f) volume = FromSlider(slid);
 
-            int hit = ui.Buttons("Muto", "−25%", "+25%", "100%");
+            int hit = ui.Buttons("Mute", "−25%", "+25%", "100%");
             if (hit == 0) volume = 0f;
             else if (hit == 1) volume = Mathf.Round((volume - Step) / Step) * Step;
             else if (hit == 2) volume = Mathf.Round((volume + Step) / Step) * Step;
@@ -271,23 +271,23 @@ namespace BigWalk.ModMenu.Voice
         {
             bool changed = false;
 
-            ui.Header("Voci degli altri giocatori");
-            changed |= ui.Toggle("Volume per giocatore", ref _enabled);
+            ui.Header("Other players' voices");
+            changed |= ui.Toggle("Per-player volume", ref _enabled);
             if (!_enabled)
             {
-                ui.Note("Spento: tutti si sentono come decide il gioco.");
+                ui.Note("Off: everyone sounds the way the game decides.");
                 if (changed) Dirty = true;
                 return;
             }
 
-            ui.Toggle("Silenzia tutti (finché non lo togli)", ref _muteAll);
+            ui.Toggle("Mute everyone (until switched off)", ref _muteAll);
             changed |= ui.HotkeyRow(_muteKey);
 
-            ui.Header("Nuovi giocatori");
-            changed |= VolumeRow(ui, "Volume di chi incontri per la prima volta", ref _defaultVolume);
-            ui.Note("Chi non hai mai regolato parte da questo volume. Chi hai già regolato tiene il suo, anche nelle prossime partite.", 2);
+            ui.Header("New players");
+            changed |= VolumeRow(ui, "Volume for people you meet for the first time", ref _defaultVolume);
+            ui.Note("Anyone you never adjusted starts at this volume. Anyone you did adjust keeps their own, in later walks too.", 2);
 
-            ui.Header("In partita adesso");
+            ui.Header("In this walk");
             _present.Clear();
             try
             {
@@ -308,29 +308,29 @@ namespace BigWalk.ModMenu.Voice
 
             if (_present.Count == 0)
             {
-                ui.Note(Game.InWorld ? "Non c'è nessun altro giocatore con la voce attiva." : "Entra in una partita per vedere i giocatori.");
+                ui.Note(Game.InWorld ? "No other player has an active voice." : "Join a walk to see the players.");
             }
             for (int i = 0; i < _present.Count; i++)
             {
                 Voice v = _present[i];
                 ReadMeters(v);
                 Listener l = v.Listener;
-                string name = l != null && !string.IsNullOrEmpty(l.Name) ? l.Name : "Giocatore " + (i + 1);
+                string name = l != null && !string.IsNullOrEmpty(l.Name) ? l.Name : "Player " + (i + 1);
                 if (l == null)
                 {
-                    ui.Label(name + ": <color=#aaaaaa>in arrivo… (" + Percent(_defaultVolume) + ")</color>");
+                    ui.Label(name + ": <color=#aaaaaa>joining… (" + Percent(_defaultVolume) + ")</color>");
                     Meter(ui, v);
                     continue;
                 }
                 if (VolumeRow(ui, name, ref l.Volume)) changed |= l.Key.Length > 0;
                 Meter(ui, v);
-                if (v.Clipping) ui.Note("<color=#ffaa66>La voce sta saturando: a questo volume si sente distorta.</color>");
+                if (v.Clipping) ui.Note("<color=#ffaa66>This voice is clipping: at this volume it sounds distorted.</color>");
                 ui.Space(4f);
             }
 
             if (_present.Count > 1)
             {
-                int hit = ui.Buttons("Tutti a 100%", "Tutti come i nuovi");
+                int hit = ui.Buttons("All to 100%", "All to the new-player volume");
                 if (hit >= 0)
                 {
                     foreach (Voice v in _present)
@@ -342,8 +342,8 @@ namespace BigWalk.ModMenu.Voice
                 }
             }
 
-            ui.Header("Giocatori ricordati");
-            ui.Toggle($"Mostra l'elenco ({_known.Count})", ref _showRemembered);
+            ui.Header("Remembered players");
+            ui.Toggle($"Show the list ({_known.Count})", ref _showRemembered);
             if (_showRemembered)
             {
                 string forget = null;
@@ -351,8 +351,8 @@ namespace BigWalk.ModMenu.Voice
                 {
                     string name = string.IsNullOrEmpty(l.Name) ? l.Key : l.Name;
                     Rect r = ui.Reserve(Ui.Row);
-                    GUI.Label(new Rect(r.x, r.y, r.width - 96f, r.height), name + "  <color=#aaaaaa>" + (l.Volume <= 0f ? "muto" : Percent(l.Volume)) + "</color>");
-                    if (GUI.Button(new Rect(r.x + r.width - 92f, r.y, 92f, r.height), "Dimentica")) forget = l.Key;
+                    GUI.Label(new Rect(r.x, r.y, r.width - 96f, r.height), name + "  <color=#aaaaaa>" + (l.Volume <= 0f ? "muted" : Percent(l.Volume)) + "</color>");
+                    if (GUI.Button(new Rect(r.x + r.width - 92f, r.y, 92f, r.height), "Forget")) forget = l.Key;
                 }
                 if (forget != null)
                 {
@@ -363,11 +363,11 @@ namespace BigWalk.ModMenu.Voice
                     }
                     changed = true;
                 }
-                if (_known.Count == 0) ui.Note("Ancora nessuno.");
+                if (_known.Count == 0) ui.Note("Nobody yet.");
             }
 
             ui.Space();
-            ui.Note("Da 0% (muto) a 1500%. Il gioco livella già le voci e le fa passare da un limitatore: oltre il 300% circa una voce normale diventa più forte ma anche più schiacciata. Lo senti solo tu.", 4);
+            ui.Note("From 0% (muted) to 1500%. The game already levels voices and runs them through a limiter: past about 300% a normal voice gets louder but also more squashed. Only you hear the change.", 4);
 
             if (changed) Dirty = true;
         }
