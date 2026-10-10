@@ -445,7 +445,7 @@ namespace BigWalk.ModMenu.Performance
             else if (hit == 1) Preset(1.25f, 1.5f, 1.5f, 1f, true);
             else if (hit == 2) Preset(0.85f, 0.7f, 0.8f, 0.8f, true);
             else if (hit == 3) Preset(0.55f, 0.3f, 0.5f, 0.5f, true);
-            if (ui.Button("Sharp: 140% supersampling, LOD 4x, 8192 shadows (heavy)"))
+            if (ui.Button("Sharp: 140% scale, LOD 4x, 8K shadows (heavy)"))
             {
                 // The recipe of the "Big Visuals" mod: no blur filter, the higher resolution smooths the edges.
                 Set("RenderScale", 1.4f); Set("LodBias", 4f); Set("CameraAa", 0f); Set("Upscaling", 1f);

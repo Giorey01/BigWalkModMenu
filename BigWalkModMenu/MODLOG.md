@@ -234,4 +234,4 @@ Fatti trovati in gioco:
 - Repository git in `~/Documents/antigravity/amazing-volta` (ramo `master`): commit di partenza `v1.3.0`, poi un commit
   per passo. Fuori dal repository: `bin/obj`, DLL e zip del pacchetto, immagini, `facce_rimosse/`, file `.bak`.
 - Provato: compilazione di tutti i progetti; installer e disinstallatore Linux in inglese su una cartella finta.
-  **Non provato: l'interfaccia inglese vista in gioco** (testi più lunghi potrebbero uscire tagliati) e gli script PowerShell.
+  Interfaccia inglese vista in gioco scheda per scheda (un solo testo tagliato, accorciato); le cartelle dati si sono rinominate da sole. **Non provati: gli script PowerShell.**
