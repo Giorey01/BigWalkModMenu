@@ -221,3 +221,17 @@ Fatti trovati in gioco:
   Controllo prima della pubblicazione: nessuna immagine, nessun percorso personale nelle DLL, nessun file del gioco.
 - Ponte di prova: aggiunti `window x y` e `mod solo spawn|select n|delete n|follow|gather|state`. Script client in
   `~/bigwalk-decomp/work/dev.sh`.
+
+## 1.4.0 (2026-10-10) — tutto in inglese, repository git
+
+- Interfaccia, installer, disinstallatori, README e changelog tradotti in inglese; `LEGGIMI.txt` tolto.
+  Script rinominati `install-*` / `uninstall-*`, opzioni `--yes --dry-run --all-mods --mod` (`-Yes -DryRun -AllMods -Mod`),
+  nomi delle mod per `--mod`: `faces solo character camera performance world reshade voice extras replay`.
+- Cartelle e file dati con nome italiano rinominati al primo uso con `ModMenuApi.Renamed` (il contenuto resta):
+  `foto→photos`, `musica→music`, `suoni→sounds`, `adesivi→stickers`, `registrazioni→recordings`, `profili→profiles`,
+  `amici→friends`, `fumetti.txt→bubbles.txt`, `diario.csv→diary.csv`; `crea_video.sh→make_video.sh` per i nuovi video.
+  Le chiavi dei file `.cfg` erano già in inglese: le impostazioni restano valide.
+- Repository git in `~/Documents/antigravity/amazing-volta` (ramo `master`): commit di partenza `v1.3.0`, poi un commit
+  per passo. Fuori dal repository: `bin/obj`, DLL e zip del pacchetto, immagini, `facce_rimosse/`, file `.bak`.
+- Provato: compilazione di tutti i progetti; installer e disinstallatore Linux in inglese su una cartella finta.
+  **Non provato: l'interfaccia inglese vista in gioco** (testi più lunghi potrebbero uscire tagliati) e gli script PowerShell.

@@ -5,7 +5,7 @@ obj/
 
 # release artefacts (rebuilt from source, see MODLOG.md)
 dist/*.zip
-dist/singole/
+dist/single/
 dist/pacchetto/BepInEx/**/*.dll
 
 # old binaries and source backups kept locally
