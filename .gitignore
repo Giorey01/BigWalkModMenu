@@ -1,0 +1,21 @@
+# build output
+bin/
+obj/
+*.pdb
+
+# release artefacts (rebuilt from source, see MODLOG.md)
+dist/*.zip
+dist/singole/
+dist/pacchetto/BepInEx/**/*.dll
+
+# old binaries and source backups kept locally
+*.bak
+
+# personal photos: never in the repository
+BigWalkFaceMaskMod/facce_rimosse/
+*.png
+*.jpg
+*.jpeg
+
+# local tooling
+.agents/

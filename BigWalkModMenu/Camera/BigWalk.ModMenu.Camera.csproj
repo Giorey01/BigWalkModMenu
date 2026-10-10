@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>BigWalk.ModMenu.Camera</AssemblyName>
+    <RootNamespace>BigWalk.ModMenu.Camera</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Core/BigWalk.ModMenu.csproj" Private="false" />
+  </ItemGroup>
+</Project>

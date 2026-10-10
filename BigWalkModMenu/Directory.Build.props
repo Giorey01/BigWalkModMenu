@@ -1,0 +1,39 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <Version>1.3.0</Version>
+    <GameDir>$(HOME)/.local/share/Steam/steamapps/common/Big Walk</GameDir>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <DebugType>none</DebugType>
+    <DefineConstants Condition="'$(Dev)' == '1'">$(DefineConstants);DEV</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="$(GameDir)/BepInEx/core/BepInEx.Core.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/core/BepInEx.Unity.IL2CPP.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/core/0Harmony.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/core/Il2CppInterop.Runtime.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/interop/Il2Cppmscorlib.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/interop/Il2CppSystem.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/interop/Il2CppSystem.Core.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/interop/Assembly-CSharp.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/interop/Mirror.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/interop/Rewired_Core.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/interop/Enviro3.Runtime.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/interop/Unity.RenderPipelines.Core.Runtime.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/interop/Unity.RenderPipelines.Universal.Runtime.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/interop/UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/interop/UnityEngine.IMGUIModule.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/interop/UnityEngine.InputLegacyModule.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/interop/UnityEngine.ImageConversionModule.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/interop/UnityEngine.PhysicsModule.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/interop/UnityEngine.AnimationModule.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/interop/UnityEngine.AudioModule.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/interop/UnityEngine.ParticleSystemModule.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/interop/UnityEngine.ScreenCaptureModule.dll" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/interop/UnityEngine.TextRenderingModule.dll" Private="false" />
+  </ItemGroup>
+</Project>

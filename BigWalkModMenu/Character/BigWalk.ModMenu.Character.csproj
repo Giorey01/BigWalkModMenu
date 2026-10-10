@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>BigWalk.ModMenu.Character</AssemblyName>
+    <RootNamespace>BigWalk.ModMenu.Character</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Core/BigWalk.ModMenu.csproj" Private="false" />
+  </ItemGroup>
+</Project>

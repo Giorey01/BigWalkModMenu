@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>BigWalk.ModMenu.Voice</AssemblyName>
+    <RootNamespace>BigWalk.ModMenu.Voice</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Core/BigWalk.ModMenu.csproj" Private="false" />
+    <Reference Include="$(GameDir)/BepInEx/interop/DissonanceVoip.dll" Private="false" />
+  </ItemGroup>
+</Project>
