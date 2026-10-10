@@ -145,7 +145,7 @@ if (Test-Path -LiteralPath $BepInExMarker) {
 # Each mod is a tab of the menu and a file of its own. The base menu ("General") is always installed.
 
 $Mods = @(
-    @{ Id = "faces";       Name = "Faces";       Text = "a photo of a face on the characters' heads"; Files = @("FaceMaskMod\BigWalk.FaceMaskMod.dll", "FaceMaskMod\StbImageSharp.dll") },
+    @{ Id = "faces";       Name = "Faces";       Text = "a photo of a face on the characters' heads"; Files = @("BigWalkModMenu\BigWalk.ModMenu.Faces.dll") },
     @{ Id = "solo";        Name = "Solo";        Text = "up to four characters controlled by one player"; Files = @("BigWalkModMenu\BigWalk.ModMenu.Solo.dll") },
     @{ Id = "character";   Name = "Character";   Text = "hats, accessories, colours, proportions"; Files = @("BigWalkModMenu\BigWalk.ModMenu.Character.dll") },
     @{ Id = "camera";      Name = "Camera";      Text = "selfie, third person, free camera, photos"; Files = @("BigWalkModMenu\BigWalk.ModMenu.Camera.dll") },
@@ -160,9 +160,14 @@ $CoreFiles = @("BigWalkModMenu\BigWalk.ModMenu.dll", "BigWalkModMenu\StbImageSha
 
 $Src = Join $Here "BepInEx\plugins"
 $Dst = Join $Game "BepInEx\plugins"
+# Up to 1.4.0 the Faces mod was a plugin of its own, in this folder.
+$OldFaces = Join $Dst "FaceMaskMod"
 
 function In-Package($m) { return (Test-Path -LiteralPath (Join $Src $m.Files[0])) }
-function Is-Installed($m) { return (Test-Path -LiteralPath (Join $Dst $m.Files[0])) }
+function Is-Installed($m) {
+    if (Test-Path -LiteralPath (Join $Dst $m.Files[0])) { return $true }
+    return (($m.Id -eq "faces") -and (Test-Path -LiteralPath (Join $OldFaces "BigWalk.FaceMaskMod.dll")))
+}
 
 $Available = @($Mods | Where-Object { In-Package $_ })
 $Selected = @()
@@ -240,8 +245,23 @@ foreach ($m in $Available) {
 if ($done.Count -gt 0) { Write-Host ("Mods installed or updated: " + ($done -join " ")) }
 if (-not $DryRun) {
     if (-not (Test-Path -LiteralPath (Join $Dst "BigWalkModMenu\BigWalk.ModMenu.dll"))) { Stop-Install "The mod does not appear to have been copied." }
-    if (Test-Path -LiteralPath (Join $Dst "FaceMaskMod\BigWalk.FaceMaskMod.dll")) {
-        New-Item -ItemType Directory -Path (Join $Dst "FaceMaskMod\faces") -Force -ErrorAction SilentlyContinue | Out-Null
+    if (Test-Path -LiteralPath (Join $Dst "BigWalkModMenu\BigWalk.ModMenu.Faces.dll")) {
+        New-Item -ItemType Directory -Path (Join $Dst "BigWalkModMenu\faces\photos") -Force -ErrorAction SilentlyContinue | Out-Null
+    }
+}
+
+# The old Faces plugin would be loaded next to the new one. Its photos and settings stay where they
+# are: the Faces tab moves them to BigWalkModMenu\faces the first time the game starts.
+if ($DryRun -or (Test-Path -LiteralPath (Join $Dst "BigWalkModMenu\BigWalk.ModMenu.Faces.dll"))) {
+    foreach ($name in @("BigWalk.FaceMaskMod.dll", "StbImageSharp.dll")) {
+        $old = Join $OldFaces $name
+        if (-not (Test-Path -LiteralPath $old)) { continue }
+        if ($DryRun) {
+            Write-Host ("[dry run] would delete the old file: FaceMaskMod\" + $name)
+        } else {
+            Remove-Item -LiteralPath $old -Force -ErrorAction SilentlyContinue
+            Write-Host ("Old Faces plugin file removed: FaceMaskMod\" + $name)
+        }
     }
 }
 $missing = @($Available | Where-Object { ($Selected -notcontains $_.Id) -and -not (Is-Installed $_) } | ForEach-Object { $_.Name })
@@ -260,8 +280,8 @@ Write-Host "The first start after installing BepInEx takes a few minutes (it pre
 Write-Host "game files) and looks frozen: let it finish."
 Write-Host ""
 Write-Host "In game the menu opens with F8 or Insert."
-if (Test-Path -LiteralPath (Join $Dst "FaceMaskMod\BigWalk.FaceMaskMod.dll")) {
-    Write-Host ("Photos for the faces go in: " + (Join $Game "BepInEx\plugins\FaceMaskMod\faces"))
+if (Test-Path -LiteralPath (Join $Dst "BigWalkModMenu\BigWalk.ModMenu.Faces.dll")) {
+    Write-Host ("Photos for the faces go in: " + (Join $Game "BepInEx\plugins\BigWalkModMenu\faces\photos"))
     Write-Host "(or pick another folder from the Faces tab)."
 }
 exit 0

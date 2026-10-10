@@ -18,9 +18,9 @@ using Mirror;
 using StbImageSharp;
 using UnityEngine;
 
-namespace BigWalk.FaceMaskMod
+namespace BigWalk.ModMenu.Faces
 {
-    [BepInPlugin("com.antigravity.facemaskmod", "Big Walk Face Mask Mod", "3.3.0")]
+    [BepInPlugin("com.bigwalk.modmenu.faces", "Big Walk Mod Menu - Faces", ModMenuApi.Version)]
     [BepInDependency(BigWalk.ModMenu.Plugin.Guid)]
     public class Plugin : BasePlugin
     {
@@ -42,12 +42,12 @@ namespace BigWalk.FaceMaskMod
         public override void Load()
         {
             LogSource = Log;
-            LogSource.LogInfo("Big Walk Face Mask Mod 3.3.0 is loading...");
 
-            PluginPath = Path.Combine(Paths.PluginPath, "FaceMaskMod");
-            DefaultFacesDirectory = Path.Combine(PluginPath, "faces");
+            PluginPath = Path.Combine(ModMenuApi.RootPath, "faces");
+            DefaultFacesDirectory = Path.Combine(PluginPath, "photos");
             FacesDirectory = DefaultFacesDirectory;
             SettingsDirectory = Path.Combine(PluginPath, "settings");
+            MoveLegacyData();
             Directory.CreateDirectory(DefaultFacesDirectory);
             Directory.CreateDirectory(SettingsDirectory);
 
@@ -55,6 +55,51 @@ namespace BigWalk.FaceMaskMod
             GlobalSettings.Load();
 
             ModMenuApi.Register(new FacesModule());
+        }
+
+        /// <summary>The photo folder of the stand-alone plugin (up to 1.4.0), which a saved setting may still point at.</summary>
+        public static string LegacyFacesDirectory => Path.Combine(Paths.PluginPath, "FaceMaskMod", "faces");
+
+        // Up to 1.4.0 this tab was a plugin of its own in BepInEx/plugins/FaceMaskMod: photos, per-face
+        // settings and friends' faces are moved here, so nobody loses them by updating.
+        private static void MoveLegacyData()
+        {
+            string old = Path.Combine(Paths.PluginPath, "FaceMaskMod");
+            if (!Directory.Exists(old)) return;
+            MoveInto(Path.Combine(old, "faces"), DefaultFacesDirectory);
+            MoveInto(Path.Combine(old, "settings"), SettingsDirectory);
+            MoveInto(Path.Combine(old, "amici"), Path.Combine(PluginPath, "friends"));
+            MoveInto(Path.Combine(old, "friends"), Path.Combine(PluginPath, "friends"));
+            try
+            {
+                if (Directory.GetFileSystemEntries(old).Length == 0) Directory.Delete(old);
+            }
+            catch (Exception ex)
+            {
+                LogSource.LogWarning($"[Faces] Could not remove the old folder {old}: {ex.Message}");
+            }
+        }
+
+        // Files already present at the destination are left alone, and their old copy stays where it was.
+        private static void MoveInto(string from, string to)
+        {
+            if (!Directory.Exists(from)) return;
+            try
+            {
+                Directory.CreateDirectory(to);
+                foreach (string file in Directory.GetFiles(from))
+                {
+                    string target = Path.Combine(to, Path.GetFileName(file));
+                    if (!File.Exists(target)) File.Move(file, target);
+                }
+                foreach (string dir in Directory.GetDirectories(from)) MoveInto(dir, Path.Combine(to, Path.GetFileName(dir)));
+                if (Directory.GetFileSystemEntries(from).Length == 0) Directory.Delete(from);
+                LogSource.LogInfo($"[Faces] Moved {from} to {to}");
+            }
+            catch (Exception ex)
+            {
+                LogSource.LogWarning($"[Faces] Could not move {from} to {to}: {ex.Message}");
+            }
         }
     }
 
@@ -74,6 +119,7 @@ namespace BigWalk.FaceMaskMod
         public override void Load(ModConfig c)
         {
             _folder = c.GetString("Folder", "");
+            if (string.Equals(_folder.TrimEnd('/', '\\'), Plugin.LegacyFacesDirectory, StringComparison.OrdinalIgnoreCase)) _folder = "";
             _folderMissing = _folder.Length > 0 && !Plugin.UseFacesDirectory(_folder);
             if (_folder.Length == 0) Plugin.UseFacesDirectory("");
         }
@@ -793,7 +839,7 @@ namespace BigWalk.FaceMaskMod
                 }
                 catch (Exception ex)
                 {
-                    Plugin.LogSource?.LogError($"[FaceMaskMod] Head '{r.name}': {ex}");
+                    Plugin.LogSource?.LogError($"[Faces] Head '{r.name}': {ex}");
                 }
             }
 
@@ -803,7 +849,7 @@ namespace BigWalk.FaceMaskMod
             {
                 // Let the game put its own look colour back on the renderers we just released.
                 try { pc.looks.SetColor(pc.looks.headRenderers, pc.looks.headColor); }
-                catch (Exception ex) { Plugin.LogSource?.LogWarning($"[FaceMaskMod] Could not restore the nose colour: {ex.Message}"); }
+                catch (Exception ex) { Plugin.LogSource?.LogWarning($"[Faces] Could not restore the nose colour: {ex.Message}"); }
             }
         }
 
@@ -820,7 +866,7 @@ namespace BigWalk.FaceMaskMod
                 {
                     try { _lookColourProperty = PlayerLooks.lookColorPropertyName; } catch { }
                     if (string.IsNullOrEmpty(_lookColourProperty)) _lookColourProperty = "_Color0";
-                    Plugin.LogSource?.LogInfo($"[FaceMaskMod] Nose colour property: '{_lookColourProperty}'");
+                    Plugin.LogSource?.LogInfo($"[Faces] Nose colour property: '{_lookColourProperty}'");
                 }
                 // The game writes its look colour through a property block too, so keep ours on top.
                 r.GetPropertyBlock(_noseBlock);
@@ -865,7 +911,7 @@ namespace BigWalk.FaceMaskMod
                 }
                 catch (Exception ex)
                 {
-                    Plugin.LogSource?.LogError($"[FaceMaskMod] Torso '{child.name}': {ex}");
+                    Plugin.LogSource?.LogError($"[Faces] Torso '{child.name}': {ex}");
                 }
             }
         }
@@ -877,7 +923,7 @@ namespace BigWalk.FaceMaskMod
             for (int i = 0; i < all.Count; i++)
             {
                 try { ApplyHeadScale(all[i]); }
-                catch (Exception ex) { Plugin.LogSource?.LogError($"[FaceMaskMod] Head scale: {ex}"); }
+                catch (Exception ex) { Plugin.LogSource?.LogError($"[Faces] Head scale: {ex}"); }
             }
         }
 
@@ -915,7 +961,7 @@ namespace BigWalk.FaceMaskMod
                     Radius = Mathf.Abs(parentScale) > 1e-5f ? meshRadius * sample.transform.lossyScale.y / parentScale : 0f,
                 };
                 _scales[id] = st;
-                Plugin.LogSource?.LogInfo($"[FaceMaskMod] Head scale target '{container.name}': scale {st.Scale}, pos {st.Position}, radius {st.Radius:0.000}");
+                Plugin.LogSource?.LogInfo($"[Faces] Head scale target '{container.name}': scale {st.Scale}, pos {st.Position}, radius {st.Radius:0.000}");
             }
 
             Vector3 scale = st.Scale * k;
@@ -935,7 +981,7 @@ namespace BigWalk.FaceMaskMod
                 if (filter == null || filter.sharedMesh == null)
                 {
                     _unusableHeads.Add(id);
-                    Plugin.LogSource?.LogWarning($"[FaceMaskMod] Head renderer '{r.name}' has no MeshFilter/mesh, skipped.");
+                    Plugin.LogSource?.LogWarning($"[Faces] Head renderer '{r.name}' has no MeshFilter/mesh, skipped.");
                     return;
                 }
 
@@ -966,7 +1012,7 @@ namespace BigWalk.FaceMaskMod
                 }
 
                 _heads[id] = state;
-                Plugin.LogSource?.LogInfo($"[FaceMaskMod] Head '{r.name}': mesh '{state.OriginalMesh.name}' bounds {state.OriginalMesh.bounds.center}/{state.OriginalMesh.bounds.extents}, " +
+                Plugin.LogSource?.LogInfo($"[Faces] Head '{r.name}': mesh '{state.OriginalMesh.name}' bounds {state.OriginalMesh.bounds.center}/{state.OriginalMesh.bounds.extents}, " +
                                           $"front {state.Front} ({(frontOverride.HasValue ? "from the head" : noseFound ? "from nose" : "default")}), {(mats != null ? mats.Length : 0)} material(s).");
             }
 
@@ -1027,7 +1073,7 @@ namespace BigWalk.FaceMaskMod
             _editSlot = slot;
             GlobalSettings.SlotFace[slot] = faceName == FaceManager.NoneFace ? "" : faceName;
             GlobalSettings.Unsaved = true;
-            Plugin.LogSource?.LogInfo($"[FaceMaskMod] Slot {slot + 1} set to face: '{faceName}'");
+            Plugin.LogSource?.LogInfo($"[Faces] Slot {slot + 1} set to face: '{faceName}'");
 
             var pc = Solo.GetPlayerForSlot(slot);
             if (pc != null) ApplyFaceToPlayer(pc, slot);

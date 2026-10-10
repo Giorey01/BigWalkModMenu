@@ -90,6 +90,7 @@ if (Get-Process -Name "Big Walk" -ErrorAction SilentlyContinue) {
 
 $Plugins = Join $Game "BepInEx\plugins"
 $Menu = Join $Plugins "BigWalkModMenu"
+# Where the Faces mod lived up to 1.4.0: an install that was never started since may still have it.
 $Faces = Join $Plugins "FaceMaskMod"
 
 function Remove-Inside([string]$Path) {
@@ -110,7 +111,7 @@ if (-not $hasMenu -and -not $hasFaces) {
     Write-Host "Big Walk Mod Menu does not appear to be installed."
 } else {
     Write-Host ""
-    Write-Host "Removing Big Walk Mod Menu and the faces mod."
+    Write-Host "Removing Big Walk Mod Menu."
     if (-not (Ask "Go ahead?" $true)) { Stop-Uninstall "Uninstall cancelled." }
 
     if (-not $removeAll -and -not $Yes) {

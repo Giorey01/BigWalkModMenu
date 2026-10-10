@@ -62,7 +62,7 @@ namespace BigWalk.ModMenu
 
     public static class ModMenuApi
     {
-        public const string Version = "1.4.0";
+        public const string Version = "1.5.0";
         public static ManualLogSource Log;
         public static string RootPath = "";
 
@@ -161,6 +161,7 @@ namespace BigWalk.ModMenu
             ModMenuApi.RootPath = Path.Combine(Paths.PluginPath, "BigWalkModMenu");
             Directory.CreateDirectory(ModMenuApi.RootPath);
             Log.LogInfo($"Big Walk Mod Menu {ModMenuApi.Version} is loading...");
+            RemoveLegacyFaces();
 
             ModMenuApi.Register(new GeneralModule());
 
@@ -177,6 +178,29 @@ namespace BigWalk.ModMenu
             // Each patch is applied on its own so that one failure cannot take the others down.
             var harmony = new Harmony(Guid);
             ModMenuApi.ApplyPatch(harmony, typeof(PlayerHeadUpdatePatch));
+        }
+
+        // Up to 1.4.0 the Faces tab was a plugin of its own in BepInEx/plugins/FaceMaskMod. Left there next to
+        // the new one it would be loaded too, so it is deleted before BepInEx gets to it (this plugin is
+        // loaded first: every tab depends on it). Photos and settings are moved by the Faces tab itself.
+        private void RemoveLegacyFaces()
+        {
+            if (!File.Exists(Path.Combine(ModMenuApi.RootPath, "BigWalk.ModMenu.Faces.dll"))) return;
+            string old = Path.Combine(Paths.PluginPath, "FaceMaskMod");
+            foreach (string name in new[] { "BigWalk.FaceMaskMod.dll", "StbImageSharp.dll" })
+            {
+                string file = Path.Combine(old, name);
+                if (!File.Exists(file)) continue;
+                try
+                {
+                    File.Delete(file);
+                    Log.LogInfo($"Removed the old faces plugin file {file}");
+                }
+                catch (Exception ex)
+                {
+                    Log.LogWarning($"Could not remove the old faces plugin file {file}: {ex.Message}. Delete it by hand.");
+                }
+            }
         }
     }
 

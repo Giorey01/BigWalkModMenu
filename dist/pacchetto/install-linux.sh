@@ -166,7 +166,7 @@ fi
 # Each mod is a tab of the menu and a file of its own. The base menu ("General") is always installed.
 # id | name | description | files, space separated, relative to BepInEx/plugins
 
-MODS="faces|Faces|a photo of a face on the characters' heads|FaceMaskMod/BigWalk.FaceMaskMod.dll FaceMaskMod/StbImageSharp.dll
+MODS="faces|Faces|a photo of a face on the characters' heads|BigWalkModMenu/BigWalk.ModMenu.Faces.dll
 solo|Solo|up to four characters controlled by one player|BigWalkModMenu/BigWalk.ModMenu.Solo.dll
 character|Character|hats, accessories, colours, proportions|BigWalkModMenu/BigWalk.ModMenu.Character.dll
 camera|Camera|selfie, third person, free camera, photos|BigWalkModMenu/BigWalk.ModMenu.Camera.dll
@@ -180,13 +180,18 @@ CORE_FILES="BigWalkModMenu/BigWalk.ModMenu.dll BigWalkModMenu/StbImageSharp.dll 
 
 SRC="$HERE/BepInEx/plugins"
 DST="$GAME/BepInEx/plugins"
+# Up to 1.4.0 the Faces mod was a plugin of its own, in this folder.
+OLD_FACES="$DST/FaceMaskMod"
 
 mod_field() { printf '%s\n' "$MODS" | sed -n "${1}p" | cut -d'|' -f"$2"; }
 MOD_COUNT="$(printf '%s\n' "$MODS" | wc -l)"
 
 first_file() { printf '%s' "${1%% *}"; }
 in_package() { [ -f "$SRC/$(first_file "$(mod_field "$1" 4)")" ]; }
-installed()  { [ -f "$DST/$(first_file "$(mod_field "$1" 4)")" ]; }
+installed() {
+  [ -f "$DST/$(first_file "$(mod_field "$1" 4)")" ] && return 0
+  [ "$(mod_field "$1" 1)" = faces ] && [ -f "$OLD_FACES/BigWalk.FaceMaskMod.dll" ]
+}
 
 # SELECTED: the numbers of the mods to install or update, space separated.
 SELECTED=""
@@ -280,7 +285,16 @@ done
 [ -n "$NAMES" ] && say "Mods installed or updated:$NAMES"
 if [ "$DRY" = 0 ]; then
   [ -f "$DST/BigWalkModMenu/BigWalk.ModMenu.dll" ] || fail "The mod does not appear to have been copied."
-  [ -f "$DST/FaceMaskMod/BigWalk.FaceMaskMod.dll" ] && mkdir -p "$DST/FaceMaskMod/faces" 2>/dev/null
+  [ -f "$DST/BigWalkModMenu/BigWalk.ModMenu.Faces.dll" ] && mkdir -p "$DST/BigWalkModMenu/faces/photos" 2>/dev/null
+fi
+
+# The old Faces plugin would be loaded next to the new one. Its photos and settings stay where they
+# are: the Faces tab moves them to BigWalkModMenu/faces the first time the game starts.
+if [ -f "$DST/BigWalkModMenu/BigWalk.ModMenu.Faces.dll" ] || [ "$DRY" = 1 ]; then
+  for f in "$OLD_FACES/BigWalk.FaceMaskMod.dll" "$OLD_FACES/StbImageSharp.dll"; do
+    [ -f "$f" ] || continue
+    if [ "$DRY" = 1 ]; then say "[dry run] would delete the old file: ${f#"$DST"/}"; else rm -f -- "$f" && say "Old Faces plugin file removed: ${f#"$DST"/}"; fi
+  done
 fi
 MISSING=""
 n=1
@@ -310,7 +324,7 @@ say "2. The first start after installing BepInEx takes a few minutes (it prepare
 say "   game files) and looks frozen: let it finish."
 say ""
 say "In game the menu opens with F8 or Insert."
-if [ -f "$DST/FaceMaskMod/BigWalk.FaceMaskMod.dll" ]; then
-  say "Photos for the faces go in: $GAME/BepInEx/plugins/FaceMaskMod/faces"
+if [ -f "$DST/BigWalkModMenu/BigWalk.ModMenu.Faces.dll" ]; then
+  say "Photos for the faces go in: $GAME/BepInEx/plugins/BigWalkModMenu/faces/photos"
   say "(or pick another folder from the Faces tab)."
 fi

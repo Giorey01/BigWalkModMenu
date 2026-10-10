@@ -1,4 +1,7 @@
-# MODLOG — Big Walk Face Mask Mod
+# MODLOG — Big Walk Face Mask Mod (dalla 1.5.0 del menu: scheda Faces, `BigWalk.ModMenu.Faces`)
+
+Le voci qui sotto sono della mod indipendente: cartella dati `BepInEx/plugins/FaceMaskMod/` e prefisso di log
+`[FaceMaskMod]`, oggi `BigWalkModMenu/faces/` e `[Faces]`. Il seguito è in `../MODLOG.md`.
 
 ## 2.0.0 (2026-10-10)
 

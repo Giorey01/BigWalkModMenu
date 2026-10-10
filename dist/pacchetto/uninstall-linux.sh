@@ -93,6 +93,7 @@ game_running && fail "Big Walk is running. Close it and run this script again."
 
 PLUGINS="$GAME/BepInEx/plugins"
 MENU="$PLUGINS/BigWalkModMenu"
+# Where the Faces mod lived up to 1.4.0: an install that was never started since may still have it.
 FACES="$PLUGINS/FaceMaskMod"
 
 remove() { # path: a file or folder inside the game folder
@@ -105,7 +106,7 @@ if [ ! -d "$MENU" ] && [ ! -d "$FACES" ]; then
   say "Big Walk Mod Menu does not appear to be installed."
 else
   say ""
-  say "Removing Big Walk Mod Menu and the faces mod."
+  say "Removing Big Walk Mod Menu."
   ask "Go ahead?" 0 || fail "Uninstall cancelled."
 
   if [ "$ALL" = 0 ] && [ "$YES" = 0 ]; then

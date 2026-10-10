@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.0
+- **Faces** is now a tab like every other: `BigWalkModMenu/BigWalk.ModMenu.Faces.dll`, no separate `FaceMaskMod` folder.
+- Photos, per-face settings and friends' faces move to `BigWalkModMenu/faces/` on first start; the old plugin file is removed.
+
 ## 1.4.0
 - The whole interface, the installers and the documentation are in English.
 - Data folders with Italian names are renamed to English ones on first use; their contents are kept.

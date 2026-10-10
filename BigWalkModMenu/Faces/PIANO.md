@@ -1,7 +1,7 @@
 # Piano operativo — Big Walk Mod Menu
 
 Stato (2026-10-10): **tutte le fasi sono scritte, compilate e installate; nessuna è ancora provata in gioco.**
-Il codice è in `../BigWalkModMenu/`, il giornale con i fatti verificati e la lista delle prove in `../BigWalkModMenu/MODLOG.md`.
+Il codice è in `../` (cartella `BigWalkModMenu/`), il giornale con i fatti verificati e la lista delle prove in `../MODLOG.md`.
 
 Differenze rispetto al piano: niente filtro "fumetto" (servono shader nostri); le texture sul corpo sono diventate
 "stampa sul busto" nella scheda Facce; luce e scia sono nel modulo Personaggio.

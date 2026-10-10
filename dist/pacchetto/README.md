@@ -1,4 +1,4 @@
-# Big Walk Mod Menu 1.4.0
+# Big Walk Mod Menu 1.5.0
 
 One in-game menu for Big Walk, with one tab per mod. Every tab is its own DLL: install only the
 ones you want and the menu shows only those. Everything is client-side unless noted.
@@ -10,7 +10,7 @@ Open the menu with **F8** or **Insert**. Drag it by its title bar.
 | Mod (tab) | File | What it does |
 |---|---|---|
 | Base menu (General) | `BigWalk.ModMenu.dll` | Required. The window, key bindings, menu size, sharing your look with friends who run the mod. |
-| Faces | `FaceMaskMod/BigWalk.FaceMaskMod.dll` | Put a photo on a character's head (and torso), with placement controls. Photos are read from a folder you choose. |
+| Faces | `BigWalk.ModMenu.Faces.dll` | Put a photo on a character's head (and torso), with placement controls. Photos are read from a folder you choose. |
 | Solo | `BigWalk.ModMenu.Solo.dll` | Play alone with up to four characters: add, switch, remove, gather, follow. Host only. |
 | Character | `BigWalk.ModMenu.Character.dll` | Hats, accessories, colours, proportions, light and trail. |
 | Camera | `BigWalk.ModMenu.Camera.dll` | Selfie, third person, free camera, screenshots up to 4x, hide the interface. |
@@ -48,6 +48,14 @@ removes anything. `--mod voice,reshade` (Linux) or `-Mod voice,reshade` (Windows
 The first start after installing BepInEx takes a few minutes.
 
 Mod names for `--mod` / `-Mod`: `faces solo character camera performance world reshade voice extras replay`.
+
+## Updating from 1.4.0 or earlier
+
+Just install over it. Up to 1.4.0 the Faces mod lived in its own folder, `BepInEx/plugins/FaceMaskMod`.
+It is now a tab like the others: the installer removes the old `BigWalk.FaceMaskMod.dll`, and the
+first time the game starts your photos and per-face settings are moved to
+`BepInEx/plugins/BigWalkModMenu/faces/` (`photos`, `settings`, `friends`). If you update by hand,
+delete `BepInEx/plugins/FaceMaskMod/BigWalk.FaceMaskMod.dll` yourself.
 
 ## Updating from 1.3.0 or earlier
 

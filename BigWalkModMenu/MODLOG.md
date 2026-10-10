@@ -1,6 +1,7 @@
 # MODLOG — Big Walk Mod Menu
 
-Giornale del progetto. I fatti sulla mod delle facce restano in `../BigWalkFaceMaskMod/MODLOG.md`.
+Giornale del progetto. I fatti sulla mod delle facce restano in `Faces/MODLOG.md` (fino alla 1.4.0 la cartella era
+`../BigWalkFaceMaskMod/`: i percorsi nelle voci vecchie qui sotto sono quelli di allora).
 
 ## 1.0.0 (2026-10-10)
 
@@ -235,3 +236,27 @@ Fatti trovati in gioco:
   per passo. Fuori dal repository: `bin/obj`, DLL e zip del pacchetto, immagini, `facce_rimosse/`, file `.bak`.
 - Provato: compilazione di tutti i progetti; installer e disinstallatore Linux in inglese su una cartella finta.
   Interfaccia inglese vista in gioco scheda per scheda (un solo testo tagliato, accorciato); le cartelle dati si sono rinominate da sole. **Non provati: gli script PowerShell.**
+
+## 1.5.0 (2026-10-10) — la mod delle facce diventa una scheda come le altre, repository su GitHub
+
+- Sorgente: `BigWalkFaceMaskMod/` → `BigWalkModMenu/Faces/` (`BigWalk.ModMenu.Faces.csproj`, namespace
+  `BigWalk.ModMenu.Faces`, riferimenti presi da `Directory.Build.props` come gli altri progetti).
+  DLL `BigWalk.ModMenu.Faces.dll`, GUID `com.bigwalk.modmenu.faces` (prima `com.antigravity.facemaskmod` 3.3.0),
+  versione uguale a quella del menu. Il GUID è cambiato apposta: con lo stesso GUID BepInEx avrebbe tenuto la
+  DLL vecchia, che ha il numero di versione più alto.
+- Installazione: `BepInEx/plugins/BigWalkModMenu/BigWalk.ModMenu.Faces.dll`; dati in `BigWalkModMenu/faces/`
+  (`photos`, `settings`, `friends`). Passaggio dalla vecchia `BepInEx/plugins/FaceMaskMod/`:
+  - gli installer tolgono `BigWalk.FaceMaskMod.dll` e il suo `StbImageSharp.dll` e contano la vecchia DLL come
+    "Faces installata", quindi la scheda viene aggiornata anche se non la si sceglie;
+  - `Core` (`RemoveLegacyFaces`) cancella la vecchia DLL all'avvio se c'è quella nuova, per chi copia a mano;
+  - la scheda (`MoveLegacyData`) sposta `faces→photos`, `settings`, `amici`/`friends` file per file senza
+    sovrascrivere, e toglie la cartella vecchia se resta vuota. Una cartella foto salvata che puntava a
+    `FaceMaskMod/faces` torna a essere "quella della mod".
+- `build.sh` nella radice: compila tutto, riempie `dist/pacchetto` e crea `dist/BigWalkModMenu-<versione>.zip` e
+  `dist/single/`. Prima si faceva a mano.
+- Repository pubblico: https://github.com/Giorey01/BigWalkModMenu. Dentro ci sono anche le skill usate per il
+  lavoro (`.claude/skills`, da universal-modder, licenza MIT) e `CLAUDE.md` con build e ciclo di prova.
+- Provato: compilazione degli 11 progetti; installer Linux su una cartella finta con la vecchia mod delle facce
+  (prova a secco e vera: DLL vecchie tolte, foto e impostazioni lasciate al loro posto), disinstallatore a secco.
+  **Non provati: l'avvio in gioco di questa versione (cancellazione della vecchia DLL da `Core`, spostamento di
+  foto e impostazioni) e gli script PowerShell.**

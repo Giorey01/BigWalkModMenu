@@ -4,7 +4,7 @@ using System.IO;
 using BigWalk.ModMenu;
 using UnityEngine;
 
-namespace BigWalk.FaceMaskMod
+namespace BigWalk.ModMenu.Faces
 {
     /// <summary>What a friend sent about their own head.</summary>
     public sealed class RemoteFace
@@ -50,7 +50,7 @@ namespace BigWalk.FaceMaskMod
         {
             get
             {
-                string p = ModMenuApi.Renamed(Plugin.PluginPath, "friends", "amici");
+                string p = Path.Combine(Plugin.PluginPath, "friends");
                 Directory.CreateDirectory(p);
                 return p;
             }

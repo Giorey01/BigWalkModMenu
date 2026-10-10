@@ -12,10 +12,8 @@ dist/pacchetto/BepInEx/**/*.dll
 *.bak
 
 # personal photos: never in the repository
-BigWalkFaceMaskMod/facce_rimosse/
+facce_rimosse/
 *.png
 *.jpg
 *.jpeg
 
-# local tooling
-.agents/
