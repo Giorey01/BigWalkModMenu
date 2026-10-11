@@ -61,7 +61,7 @@ Every tab, taken in game with version 1.5.0. Click one to see it full size.
 | Tab | What it does |
 |---|---|
 | **General** | The base menu, always installed: window, key bindings, menu size, sharing your look with friends who run the mod. |
-| **Faces** | Put a photo on a character's head (and torso), with placement controls. Photos come from a folder you choose. |
+| **Faces** | Put a photo on a character's head (and torso), with placement controls. Photos come from a folder you choose. Or your webcam, live. |
 | **Solo** | Play alone with up to four characters: add, switch, remove, gather, follow. Host only. |
 | **Character** | Hats, accessories, a D20 die for a head, colours, proportions, light and trail. |
 | **Camera** | Selfie, third person, free camera, screenshots up to 4x, hide the interface. |
@@ -109,6 +109,19 @@ after installing BepInEx takes a few minutes.
 
 Installing by hand, updating from older versions, uninstalling and troubleshooting are covered in the
 [package README](dist/pacchetto/README.md); what changed is in the [changelog](dist/pacchetto/CHANGELOG.md).
+
+### Webcam on your head
+
+Faces → **Webcam** → "Live webcam on my head", then "Open the page". The game cannot open a camera, so a page in
+your browser does: it reads the camera, follows your face and hands the pictures to the mod on your own computer
+(`127.0.0.1`, nothing else can reach it). Keep the page open and its window not minimised while you play.
+
+- The switch is off at every start of the game, and the camera only runs during a walk. A banner at the top
+  of the screen stays up while it is on.
+- Friends in the walk who have this version of the mod (host included) see it, small and a few pictures a
+  second. They could record it: only switch it on with people you trust.
+- The page downloads its face tracking (MediaPipe, from jsdelivr.net and storage.googleapis.com) the first time,
+  so it needs the internet. Your pictures are not sent there. Without it the page shows the middle of the picture.
 
 ### Multiplayer
 

@@ -122,11 +122,20 @@ namespace BigWalk.ModMenu.Faces
             if (string.Equals(_folder.TrimEnd('/', '\\'), Plugin.LegacyFacesDirectory, StringComparison.OrdinalIgnoreCase)) _folder = "";
             _folderMissing = _folder.Length > 0 && !Plugin.UseFacesDirectory(_folder);
             if (_folder.Length == 0) Plugin.UseFacesDirectory("");
+            Webcam.Load(c);
         }
 
-        public override void Save(ModConfig c) => c.Set("Folder", _folder);
+        public override void Save(ModConfig c)
+        {
+            c.Set("Folder", _folder);
+            Webcam.Save(c);
+        }
 
-        public override void Init() => FaceSync.Init();
+        public override void Init()
+        {
+            FaceSync.Init();
+            Webcam.Init();
+        }
 
         private void SetFolder(string path)
         {
@@ -157,15 +166,19 @@ namespace BigWalk.ModMenu.Faces
 
         public override void Update()
         {
+            Webcam.Update();
             _faces.Update();
             FaceSync.Update(_faces);
         }
+
+        public override void DrawOverlay() => Webcam.DrawOverlay();
         public override void DrawTab(Ui ui)
         {
             DrawFolder(ui);
             if (_picker.IsOpen) return;
             ui.Space(26f);
             _faces.Draw(ui);
+            if (Webcam.Draw(ui)) Dirty = true;
         }
         public override void OnMenuClosed() => FaceMaskBehaviour.SaveUnsavedSettings();
     }
@@ -195,6 +208,8 @@ namespace BigWalk.ModMenu.Faces
         public Material Material;
         public bool Dirty = true;      // full-resolution bake pending
         public bool PreviewDirty;      // low-resolution bake pending (while a control is being dragged)
+        public bool Live;              // moving picture (webcam): only ever the small texture, baked for every new picture
+        public bool LiveDirty;
         public float LastChange;
         public bool SettingsUnsaved;
     }
@@ -464,8 +479,19 @@ namespace BigWalk.ModMenu.Faces
             if (e == null) return null;
             if (e.Texture != null && !Game.Alive(e.Texture)) { e.Texture = null; e.Material = null; }
             if (e.Material != null && !Game.Alive(e.Material)) e.Material = null;
-            if (e.Texture == null) Bake(e);
-            if (e.Texture == null) return null;
+            Texture2D texture;
+            if (e.Live)
+            {
+                if (e.Preview != null && !Game.Alive(e.Preview)) { e.Preview = null; e.Material = null; }
+                if (e.Preview == null) Bake(e, true);
+                texture = e.Preview;
+            }
+            else
+            {
+                if (e.Texture == null) Bake(e);
+                texture = e.Texture;
+            }
+            if (texture == null) return null;
             if (e.Material != null) return e.Material;
 
             Shader shader = GetFaceShader();
@@ -474,7 +500,7 @@ namespace BigWalk.ModMenu.Faces
             var mat = new Material(shader);
             mat.name = "CustomFace_" + e.Name;
             mat.hideFlags = HideFlags.HideAndDontSave;
-            SetMaterialTexture(mat, e.Texture);
+            SetMaterialTexture(mat, texture);
             if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", Color.white);
             if (mat.HasProperty("_Color")) mat.SetColor("_Color", Color.white);
             if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 0.0f);
@@ -777,6 +803,10 @@ namespace BigWalk.ModMenu.Faces
                     if (e != null && e.Source != null && e.Texture != null && e.Dirty) FaceManager.Bake(e);
                 }
 
+                // Moving pictures: mine and the friends'.
+                BakeLive(Webcam.Entry);
+                foreach (var remote in FaceSync.Remote.Values) BakeLive(remote.Video);
+
                 // The game can reassign head materials (look changes, respawns), so keep enforcing.
                 if (Time.frameCount % 20 == 0)
                 {
@@ -788,6 +818,14 @@ namespace BigWalk.ModMenu.Faces
             {
                 Plugin.LogSource?.LogError($"Error in FaceMaskBehaviour.Update: {ex}");
             }
+        }
+
+        // Only once the picture is on a head (that is when its texture gets made).
+        private static void BakeLive(FaceEntry e)
+        {
+            if (e == null || !e.LiveDirty || e.Source == null || e.Preview == null) return;
+            e.LiveDirty = false;
+            FaceManager.Bake(e, true);
         }
 
         public static void SaveUnsavedSettings()
@@ -817,7 +855,14 @@ namespace BigWalk.ModMenu.Faces
 
             // A friend's own choice (sent by their mod) wins over what was picked for that slot here.
             RemoteFace remote = FaceSync.For(pc);
-            FaceEntry face = remote != null ? (remote.HasFace ? remote.Entry : null) : FaceManager.GetFace(_slotAssignedFace[slot]);
+            FaceEntry face;
+            if (remote != null) face = Webcam.VideoOf(remote) ?? (remote.HasFace ? remote.Entry : null);
+            else
+            {
+                bool mine = false;
+                try { mine = Webcam.Showing && pc.isLocalPlayer; } catch { }
+                face = mine ? Webcam.Entry : FaceManager.GetFace(_slotAssignedFace[slot]);
+            }
             Material faceMat = face != null ? FaceManager.GetMaterial(face) : null;
             bool noseVisible = remote != null ? remote.NoseVisible : GlobalSettings.NoseVisible[slot];
             bool noseCustom = remote != null ? remote.NoseCustom : GlobalSettings.NoseCustomColour[slot];

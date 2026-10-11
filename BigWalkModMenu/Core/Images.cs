@@ -130,6 +130,46 @@ namespace BigWalk.ModMenu
             return IsOwnJpeg(file, maxSide) && DecodeChecked(file, maxSide, out rgba, out width, out height);
         }
 
+        // ---- our JPEG without its header (live video: the header is 600 bytes that never change) ----
+
+        private static readonly System.Collections.Generic.Dictionary<int, byte[]> _headers = new System.Collections.Generic.Dictionary<int, byte[]>();
+
+        /// <summary>Length of the fixed header of a JPEG written by this mod, or 0 when it cannot be told.</summary>
+        public static int OwnJpegHeaderLength => EnsureTemplate() ? _templateScan : 0;
+
+        /// <summary>The picture data of one of our own JPEGs, without the header. Null for anything else.</summary>
+        public static byte[] StripOwnJpeg(byte[] file, int maxSide)
+        {
+            if (!IsOwnJpeg(file, maxSide)) return null;
+            var data = new byte[file.Length - _templateScan];
+            Buffer.BlockCopy(file, _templateScan, data, 0, data.Length);
+            return data;
+        }
+
+        /// <summary>
+        /// Puts the header back in front of picture data from <see cref="StripOwnJpeg"/>: the one this mod's
+        /// encoder writes for that size and quality. The result still has to pass <see cref="DecodeOwnJpeg"/>.
+        /// </summary>
+        public static byte[] RebuildOwnJpeg(byte[] data, int width, int height, int quality)
+        {
+            if (data == null || data.Length < 2 || width < 1 || height < 1 || width > 4096 || height > 4096) return null;
+            if (quality < 1 || quality > 85 || !EnsureTemplate()) return null;
+            if (!_headers.TryGetValue(quality, out byte[] header))
+            {
+                byte[] sample = EncodeJpeg(new byte[8 * 8 * 4], 8, 8, quality);
+                if (sample.Length < _templateScan) return null;
+                header = new byte[_templateScan];
+                Buffer.BlockCopy(sample, 0, header, 0, _templateScan);
+                _headers[quality] = header;
+            }
+            var file = new byte[header.Length + data.Length];
+            Buffer.BlockCopy(header, 0, file, 0, header.Length);
+            file[_sofDims] = (byte)(height >> 8); file[_sofDims + 1] = (byte)height;
+            file[_sofDims + 2] = (byte)(width >> 8); file[_sofDims + 3] = (byte)width;
+            Buffer.BlockCopy(data, 0, file, header.Length, data.Length);
+            return file;
+        }
+
         /// <summary>JPEG bytes from RGBA pixels (top row first). Alpha is ignored.</summary>
         public static byte[] EncodeJpeg(byte[] rgba, int width, int height, int quality)
         {

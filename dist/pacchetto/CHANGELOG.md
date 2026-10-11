@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- **Faces**: new **Webcam** section: your camera, live, on your head instead of the photo. A page in your browser reads the camera and follows your face; friends in the walk with this version see it too (128×128, about 8 pictures a second). Off at every start, only during a walk, with a banner on screen while it is on.
 - **Character**: ten new hats: cowboy hat, chef hat, beanie, propeller cap, sombrero, fez, viking helmet, santa hat, traffic cone and mushroom. Friends on 1.5.0 or older see you without a hat when you wear one of these.
 - **Character**: the **moustache** can be adjusted: size, width, height, in / out and how much its ends go down or curl up.
 - **Character**: the **nose** can be moved: height and sideways around the head, and in / out.

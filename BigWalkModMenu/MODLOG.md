@@ -418,3 +418,56 @@ baffi; il naso — in particolare il verso di "sideways" (da che parte va il seg
 posizione di `nose_mesh` da solo, e l'insieme con il dado D20 e con la testa ingrandita da Faces; tutto visto
 da un amico in rete.
 
+### Webcam dal vivo sulla testa (2026-10-11, dopo la 1.5.0) — richiesta dell'utente
+
+Richiesta: accendere la webcam e vederla sulla testa a sfera al posto della foto, dal vivo, **visibile a tutti**
+(amici su Windows), **seguendo il viso**; qualità "meh" accettata. Scelta concordata con l'utente: la webcam la
+legge una pagina nel browser, non un programma nostro.
+
+Perché così:
+- Il gioco non ha `WebCamTexture`: non c'è nei metadati IL2CPP né nell'interop (controllato). Sotto Proton la
+  cattura di Windows non vedrebbe comunque la camera.
+- Il browser c'è già su Windows e Linux, chiede lui il permesso e ha il riconoscimento del viso pronto.
+
+Come è fatto (tutto nella scheda Faces):
+- `WebcamServer.cs` (nessun tipo Unity, thread suoi): server HTTP minimo su `127.0.0.1:37845`. `GET /` la pagina,
+  `GET /status` cosa vuole la mod, `POST /frame` un fotogramma RGBA lato×lato. `/status` e `/frame` vogliono la
+  chiave (`Webcam.Key` in `config/faces.cfg`, fatta una volta, sta nell'indirizzo della pagina); `Host` deve essere
+  il nostro e un `Origin` di un altro sito viene rifiutato: una pagina web qualsiasi aperta nel browser non può
+  mandare immagini sulla testa. Dimensione controllata prima di leggere il corpo (32–256 px, quadrato).
+- `webcam.html` (risorsa incorporata nella DLL): camera, MediaPipe Face Detector (BlazeFace short range, caricato
+  da jsdelivr/googleapis, versione fissata 0.10.14), riquadro ammorbidito attorno al viso, occhi tenuti in
+  orizzontale, 128×128 a 15 al secondo. Il ritmo lo dà un Worker (i timer delle pagine non in primo piano vengono
+  rallentati, quelli dei Worker no). Se la mod dice "spento" la pagina rilascia la camera; se il rilevatore non si
+  carica usa il centro dell'immagine.
+- `Webcam.cs`: interruttore **mai salvato** (spento a ogni avvio), camera richiesta solo in partita
+  (`Game.InWorld`), striscia in alto finché è acceso. Il fotogramma diventa una `FaceEntry` "viva": si cuoce solo
+  la texture piccola (256, senza mip) a ogni fotogramma; `ApplyFaceToPlayer` la usa per il giocatore locale al
+  posto della foto finché arrivano fotogrammi (dopo 3 s senza, torna la foto).
+- Rete (`WebcamCodec.cs`, messaggio 22, **non conservato**): JPEG del nostro codificatore senza i 607 byte di
+  intestazione (chi riceve la rimette e passa dal solito `DecodeOwnJpeg`), al massimo 3 messaggi per fotogramma,
+  qualità che si adatta per stare in 2. 8 fotogrammi al secondo = 16 messaggi/s, sotto il limite dell'host (30/s).
+  Niente code: un fotogramma incompleto viene buttato all'arrivo del successivo. Zoom, avvolgimento e specchio
+  viaggiano in ogni messaggio (3 byte).
+- Versioni vecchie: un host o un amico senza questo tipo di messaggio lo ignora e basta (controllato in
+  `Net.ServerReceive`: il tipo sconosciuto esce prima del limite di ritmo). **Correzione** a quanto detto
+  all'utente a voce: un host vecchio non "silenzia" chi accende la webcam; semplicemente non la inoltra.
+
+Provato fuori dal gioco:
+- Pagina + server veri in Firefox senza finestra, con una finta camera (un ritratto di pubblico dominio che
+  scorre e si inclina): 15 fotogrammi/s ricevuti, viso trovato e tenuto centrato e dritto, "nessun viso" quando
+  sparisce, stop e ripartenza quando la mod spegne e riaccende.
+- Server: senza chiave, chiave sbagliata, `Origin` di un altro sito, `Host` diverso → 403; dimensioni non valide →
+  400; dati a caso al posto di HTTP → connessione chiusa e il server continua a rispondere; ascolta solo su 127.0.0.1.
+- Codec con il codificatore vero: quei fotogrammi a 128×128 vengono qualità 55, ~1,8 KB, 2 messaggi; a 8/s sono
+  ~14 KB/s; codifica 0,4 ms, decodifica 0,6 ms. 200.000 messaggi danneggiati: nessuna eccezione, nessun blocco.
+
+**Non provato** (l'utente non vuole il gioco aperto adesso):
+- tutto quello che è dentro il gioco: la texture sulla testa, il ritmo, la striscia, i pulsanti "Open the page" /
+  "Copy its address" (sotto Proton l'apertura del browser può non funzionare: l'indirizzo è scritto nella scheda);
+- se il server risponde dal gioco sotto Proton (socket .NET dentro Wine) — è il primo punto da guardare;
+- la rete con un amico vero, il canale mai misurato, Windows;
+- **la pagina con la finestra coperta dal gioco a schermo intero** (il rallentamento dei browser): la prova senza
+  finestra non lo dice. Se il ritmo crolla, in gioco si legge nella scheda ("Live: N pictures a second");
+- Chrome/Edge (provato solo Firefox), una webcam vera.
+

@@ -51,3 +51,8 @@ stb_image_write.
 
 Not shipped, downloaded by the installer from its official site: BepInEx 6 (LGPL-2.1),
 https://github.com/BepInEx/BepInEx
+
+MediaPipe Tasks Vision 0.10.14 and the BlazeFace short-range model - https://github.com/google-ai-edge/mediapipe
+----------------------------------------------------------------------------------------------------------------
+Not shipped with the mod: the webcam page loads them in your browser from cdn.jsdelivr.net and
+storage.googleapis.com when face tracking is used. Apache License 2.0. Copyright The MediaPipe Authors.

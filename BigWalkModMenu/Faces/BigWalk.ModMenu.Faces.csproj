@@ -6,5 +6,6 @@
   <ItemGroup>
     <ProjectReference Include="../Core/BigWalk.ModMenu.csproj" Private="false" />
     <PackageReference Include="StbImageSharp" Version="2.30.16" />
+    <EmbeddedResource Include="webcam.html" LogicalName="webcam.html" />
   </ItemGroup>
 </Project>

@@ -10,7 +10,7 @@ Open the menu with **F8** or **Insert**. Drag it by its title bar.
 | Mod (tab) | File | What it does |
 |---|---|---|
 | Base menu (General) | `BigWalk.ModMenu.dll` | Required. The window, key bindings, menu size, sharing your look with friends who run the mod. |
-| Faces | `BigWalk.ModMenu.Faces.dll` | Put a photo on a character's head (and torso), with placement controls. Photos are read from a folder you choose. |
+| Faces | `BigWalk.ModMenu.Faces.dll` | Put a photo on a character's head (and torso), with placement controls. Photos are read from a folder you choose. Or your webcam, live (see below). |
 | Solo | `BigWalk.ModMenu.Solo.dll` | Play alone with up to four characters: add, switch, remove, gather, follow. Host only. |
 | Character | `BigWalk.ModMenu.Character.dll` | Hats, accessories, a D20 die for a head, colours, proportions, light and trail. |
 | Camera | `BigWalk.ModMenu.Camera.dll` | Selfie, third person, free camera, screenshots up to 4x, hide the interface. |
@@ -22,6 +22,19 @@ Open the menu with **F8** or **Insert**. Drag it by its title bar.
 | Replay | `BigWalk.ModMenu.Replay.dll` | Record a scene and play it back on the real characters; export frames for a video. |
 
 Each tab that changes something leaves the game's own value alone while it is switched off.
+
+## Webcam on your head
+
+Faces → **Webcam** → "Live webcam on my head", then "Open the page". The game cannot open a camera, so a page in
+your browser does: it reads the camera, follows your face and hands the pictures to the mod on your own computer
+(`127.0.0.1`, nothing else can reach it). Keep the page open and its window not minimised while you play.
+
+- The switch is off at every start of the game, and the camera only runs during a walk. A banner at the top
+  of the screen stays up while it is on.
+- Friends in the walk who have this version of the mod (host included) see it, small and a few pictures a
+  second. They could record it: only switch it on with people you trust.
+- The page downloads its face tracking (MediaPipe, from jsdelivr.net and storage.googleapis.com) the first time,
+  so it needs the internet. Your pictures are not sent there. Without it the page shows the middle of the picture.
 
 ## Requirements
 

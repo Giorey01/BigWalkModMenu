@@ -16,6 +16,10 @@ namespace BigWalk.ModMenu.Faces
         public bool NoseVisible, NoseCustom;
         public Color NoseColour = Color.white;
         public readonly ChunkAssembler Assembler = new ChunkAssembler(FaceSync.MaxImageBytes, FaceSync.MaxChunks);
+        // Their webcam, while it is on (see Webcam).
+        public FaceEntry Video;
+        public float VideoAt = -100f;
+        public readonly WebcamCodec.Decoder Decoder = new WebcamCodec.Decoder();
     }
 
     /// <summary>
@@ -352,6 +356,7 @@ namespace BigWalk.ModMenu.Faces
             foreach (uint id in _gone)
             {
                 Release(Remote[id].Entry);
+                Release(Remote[id].Video);
                 Remote.Remove(id);
             }
         }

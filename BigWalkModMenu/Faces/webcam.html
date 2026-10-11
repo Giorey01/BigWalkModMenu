@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Big Walk webcam</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; padding: 20px; background: #16181d; color: #e8e8e8; font: 15px/1.45 system-ui, sans-serif; }
+  main { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p { margin: 6px 0; }
+  .small { color: #a9adb6; font-size: 13px; }
+  #state { padding: 10px 12px; border-radius: 8px; background: #23262e; margin: 14px 0; }
+  #state.live { background: #5a1a1a; }
+  #state.bad { background: #4a3a12; }
+  .views { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; margin: 14px 0; }
+  figure { margin: 0; }
+  figcaption { color: #a9adb6; font-size: 13px; margin-bottom: 4px; }
+  #view { width: 320px; max-width: 100%; background: #000; border-radius: 8px; display: block; }
+  #out { width: 192px; height: 192px; background: #000; border-radius: 50%; display: block; image-rendering: auto; }
+  label { display: block; margin: 10px 0 2px; }
+  select, input[type=range] { width: 100%; max-width: 320px; }
+  .row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+  .row label { margin: 0; }
+  video { position: absolute; width: 2px; height: 2px; opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Big Walk — webcam on your head</h1>
+  <p class="small">This page runs on your computer only. It sends the picture to the mod in your game; the mod shows it on your head and shares it with the friends in your walk who have the mod.</p>
+  <div id="state">Starting…</div>
+
+  <div class="views">
+    <figure><figcaption>Your camera</figcaption><canvas id="view" width="320" height="240"></canvas></figure>
+    <figure><figcaption>What goes on your head</figcaption><canvas id="out" width="128" height="128"></canvas></figure>
+  </div>
+
+  <label for="camera">Camera</label>
+  <select id="camera"></select>
+  <label for="margin">Room around the face: <span id="marginText"></span></label>
+  <input id="margin" type="range" min="1.1" max="3" step="0.05">
+  <div class="row"><input id="follow" type="checkbox"><label for="follow">Follow my face</label></div>
+  <div class="row"><input id="level" type="checkbox"><label for="level">Keep my eyes level when I tilt my head</label></div>
+
+  <p class="small" id="numbers"></p>
+  <p class="small">Keep this page open while you play, and do not minimise its window (the browser slows hidden pages down). Close it, or switch the webcam off in the mod, to stop the camera.</p>
+</main>
+<video id="video" autoplay playsinline muted></video>
+
+<script type="module">
+const key = new URLSearchParams(location.search).get('k') || '';
+const $ = id => document.getElementById(id);
+const video = $('video'), view = $('view'), out = $('out');
+const viewCtx = view.getContext('2d');
+const outCtx = out.getContext('2d', { willReadFrequently: true });
+
+const settings = Object.assign({ margin: 1.6, follow: true, level: true, camera: '' },
+  JSON.parse(localStorage.getItem('bwmm-webcam') || '{}'));
+const save = () => localStorage.setItem('bwmm-webcam', JSON.stringify(settings));
+
+let wanted = false, side = 128, fps = 15;     // what the mod asks for
+let stream = null, starting = false, cameraError = '';
+let detector = null, detectorState = 'loading'; // loading, ready, failed
+let statusFails = 0, reachable = false;
+let box = null;                                // smoothed face: centre x, y, size and tilt, in video pixels
+let lastSeen = 0, lastTick = 0, faceNow = false;
+let sending = false, sent = 0, sentAt = performance.now(), sendRate = 0;
+
+function setState(text, kind) {
+  const el = $('state');
+  if (el.textContent !== text) el.textContent = text;
+  el.className = kind || '';
+}
+
+function describe() {
+  if (!key) return setState('This address is incomplete. Open the page from the Faces tab of the mod menu.', 'bad');
+  if (!reachable) return setState('Waiting for the game. Start Big Walk with the mod; this page connects by itself.', 'bad');
+  if (!wanted) return setState('The webcam is switched off in the mod (Faces tab → Webcam). The camera is not in use.', '');
+  if (cameraError) return setState('Camera: ' + cameraError, 'bad');
+  if (!stream) return setState('Opening the camera… allow it if the browser asks.', '');
+  let text = '● LIVE — your camera is on your head in the game.';
+  if (!settings.follow) text += ' Showing the middle of the picture.';
+  else if (detectorState === 'loading') text += ' Loading face tracking…';
+  else if (detectorState === 'failed') text += ' Face tracking could not be loaded: showing the middle of the picture.';
+  else if (!faceNow) text += ' No face in sight.';
+  setState(text, 'live');
+}
+
+// ---- camera ----
+
+// A test can put its own picture source here instead of a real camera.
+const openSource = window.bwOpenSource || (async deviceId => navigator.mediaDevices.getUserMedia({
+  audio: false,
+  video: { deviceId: deviceId ? { exact: deviceId } : undefined, width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } },
+}));
+
+async function listCameras() {
+  let devices = [];
+  try { devices = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput'); } catch { }
+  const select = $('camera');
+  select.textContent = '';
+  devices.forEach((d, i) => {
+    const option = document.createElement('option');
+    option.value = d.deviceId;
+    option.textContent = d.label || 'Camera ' + (i + 1);
+    select.appendChild(option);
+  });
+  if (settings.camera && devices.some(d => d.deviceId === settings.camera)) select.value = settings.camera;
+}
+
+async function startCamera() {
+  if (stream || starting) return;
+  starting = true;
+  cameraError = '';
+  try {
+    try { stream = await openSource(settings.camera); }
+    catch (e) {
+      if (!settings.camera) throw e;
+      stream = await openSource('');          // the remembered camera is gone: take any
+    }
+    video.srcObject = stream;
+    await video.play().catch(() => { });
+    box = null;
+    await listCameras();                       // labels only exist once a camera was allowed
+  } catch (e) {
+    stream = null;
+    cameraError = e && e.name === 'NotAllowedError' ? 'not allowed. Allow the camera for this page and reload it.'
+      : e && e.name === 'NotFoundError' ? 'no camera found.'
+      : e && e.name === 'NotReadableError' ? 'in use by another program.'
+      : (e && e.message) || 'could not be opened.';
+  }
+  starting = false;
+}
+
+function stopCamera() {
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  stream = null;
+  video.srcObject = null;
+  box = null;
+  faceNow = false;
+}
+
+// ---- face tracking ----
+
+async function loadDetector() {
+  try {
+    const base = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+    const vision = await import(base + '/vision_bundle.mjs');
+    const files = await vision.FilesetResolver.forVisionTasks(base + '/wasm');
+    const model = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
+    const make = delegate => vision.FaceDetector.createFromOptions(files, {
+      baseOptions: { modelAssetPath: model, delegate }, runningMode: 'VIDEO', minDetectionConfidence: 0.5,
+    });
+    try { detector = await make('GPU'); } catch { detector = await make('CPU'); }
+    detectorState = 'ready';
+  } catch (e) {
+    console.warn('Face tracking not available:', e);
+    detectorState = 'failed';
+  }
+}
+
+// The biggest face in the picture as { x, y, size, tilt }, or null.
+function findFace(now) {
+  if (!detector || !settings.follow) return null;
+  let result;
+  try { result = detector.detectForVideo(video, now); }
+  catch (e) { console.warn(e); detectorState = 'failed'; detector = null; return null; }
+  let best = null;
+  for (const d of result.detections || []) {
+    const b = d.boundingBox;
+    if (b && (!best || b.width * b.height > best.boundingBox.width * best.boundingBox.height)) best = d;
+  }
+  if (!best) return null;
+  const b = best.boundingBox, w = video.videoWidth, h = video.videoHeight;
+  let tilt = 0;
+  const k = best.keypoints;
+  if (k && k.length >= 2) {
+    // The two eyes; whichever is on the left of the picture comes first.
+    const a = k[0].x <= k[1].x ? k[0] : k[1], c = k[0].x <= k[1].x ? k[1] : k[0];
+    tilt = Math.atan2((c.y - a.y) * h, (c.x - a.x) * w);
+    if (Math.abs(tilt) > 1) tilt = 0;
+  }
+  return { x: b.originX + b.width / 2, y: b.originY + b.height / 2, size: Math.max(b.width, b.height), tilt };
+}
+
+function follow(found, now) {
+  const w = video.videoWidth, h = video.videoHeight;
+  const dt = Math.min(0.5, Math.max(0.001, (now - lastTick) / 1000));
+  lastTick = now;
+  if (found) {
+    faceNow = true;
+    lastSeen = now;
+    if (!box) box = found;
+    else {
+      // Quick enough to keep up with a moving head, slow enough not to shake.
+      const a = 1 - Math.exp(-dt / 0.12), s = 1 - Math.exp(-dt / 0.35);
+      box.x += (found.x - box.x) * a;
+      box.y += (found.y - box.y) * a;
+      box.size += (found.size - box.size) * s;
+      box.tilt += (found.tilt - box.tilt) * s;
+    }
+  } else if (now - lastSeen > 700) {
+    faceNow = false;
+    // Nobody there for a while (or tracking is off): drift back to the middle of the picture.
+    if (!settings.follow || detectorState !== 'ready' || now - lastSeen > 4000) {
+      const middle = { x: w / 2, y: h / 2, size: Math.min(w, h) / settings.margin, tilt: 0 };
+      if (!box) box = middle;
+      else {
+        const a = 1 - Math.exp(-dt / 0.5);
+        for (const p of ['x', 'y', 'size', 'tilt']) box[p] += (middle[p] - box[p]) * a;
+      }
+    }
+  }
+  if (!box) box = { x: w / 2, y: h / 2, size: Math.min(w, h) / settings.margin, tilt: 0 };
+}
+
+// ---- drawing and sending ----
+
+function draw() {
+  const w = video.videoWidth, h = video.videoHeight;
+  if (out.width !== side) { out.width = side; out.height = side; }
+  const crop = box.size * settings.margin, tilt = settings.level ? box.tilt : 0;
+
+  outCtx.setTransform(1, 0, 0, 1, 0, 0);
+  outCtx.fillStyle = '#202020';
+  outCtx.fillRect(0, 0, side, side);
+  outCtx.translate(side / 2, side / 2);
+  outCtx.rotate(-tilt);
+  outCtx.scale(side / crop, side / crop);
+  outCtx.translate(-box.x, -box.y);
+  outCtx.drawImage(video, 0, 0, w, h);
+
+  const vw = view.width, vh = Math.round(vw * h / w);
+  if (view.height !== vh) view.height = vh;
+  viewCtx.setTransform(1, 0, 0, 1, 0, 0);
+  viewCtx.drawImage(video, 0, 0, vw, vh);
+  const f = vw / w;
+  viewCtx.translate(box.x * f, box.y * f);
+  viewCtx.rotate(tilt);
+  viewCtx.strokeStyle = faceNow ? '#6f6' : '#fc6';
+  viewCtx.lineWidth = 2;
+  viewCtx.strokeRect(-crop * f / 2, -crop * f / 2, crop * f, crop * f);
+}
+
+async function send() {
+  sending = true;
+  try {
+    const pixels = outCtx.getImageData(0, 0, side, side).data;
+    const reply = await fetch('/frame', {
+      method: 'POST',
+      headers: { 'X-Key': key, 'X-Face': faceNow ? '1' : '0', 'Content-Type': 'application/octet-stream' },
+      body: pixels,
+    });
+    if (reply.ok) sent++;
+  } catch { }
+  sending = false;
+}
+
+function frame() {
+  if (!wanted || !stream || sending || video.readyState < 2 || !video.videoWidth) return;
+  const now = performance.now();
+  follow(findFace(now), now);
+  draw();
+  send();
+}
+
+// ---- talking to the mod ----
+
+async function poll() {
+  if (!key) return;
+  try {
+    const reply = await fetch('/status', { headers: { 'X-Key': key }, cache: 'no-store' });
+    if (!reply.ok) throw new Error(reply.status);
+    const s = await reply.json();
+    wanted = !!s.on;
+    side = Math.min(256, Math.max(32, s.side | 0)) || 128;
+    if ((s.fps | 0) !== fps && (s.fps | 0) > 0) { fps = s.fps | 0; clock.postMessage(fps); }
+    statusFails = 0;
+    reachable = true;
+  } catch {
+    if (++statusFails >= 3) { reachable = false; wanted = false; }
+  }
+  if (wanted) startCamera(); else stopCamera();
+
+  const now = performance.now();
+  if (now - sentAt >= 2000) { sendRate = sent * 1000 / (now - sentAt); sent = 0; sentAt = now; }
+  $('numbers').textContent = wanted && stream ? `${sendRate.toFixed(1)} pictures a second, ${side}×${side}` : '';
+  describe();
+}
+
+// Timers of a page that is not in front are slowed down to one a second; a worker's are not.
+const clock = new Worker(URL.createObjectURL(new Blob([`
+  let timer = 0, n = 0, every = 15;
+  const start = fps => { every = fps; clearInterval(timer); timer = setInterval(() => postMessage(++n % every === 0 ? 'poll' : 'frame'), 1000 / fps); };
+  onmessage = e => start(e.data);
+  start(15);
+`], { type: 'text/javascript' })));
+clock.onmessage = e => { if (e.data === 'poll') poll(); frame(); };
+
+// ---- controls ----
+
+$('margin').value = settings.margin;
+$('follow').checked = settings.follow;
+$('level').checked = settings.level;
+const showMargin = () => $('marginText').textContent = Math.round(settings.margin * 100) + '%';
+showMargin();
+$('margin').oninput = e => { settings.margin = +e.target.value; showMargin(); save(); };
+$('follow').onchange = e => { settings.follow = e.target.checked; save(); };
+$('level').onchange = e => { settings.level = e.target.checked; save(); };
+$('camera').onchange = e => { settings.camera = e.target.value; save(); stopCamera(); if (wanted) startCamera(); };
+addEventListener('pagehide', stopCamera);
+
+describe();
+poll();
+loadDetector().then(describe);
+</script>
+</body>
+</html>
