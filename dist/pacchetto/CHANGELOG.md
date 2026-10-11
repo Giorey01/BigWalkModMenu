@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- **World**: fix for the game stopping when a filter such as **VHS** is switched on. The TV scanlines no longer use a texture of the mod's own, a filter volume that got lost is removed instead of staying on, and every filter effect is tried on its own the first time: if the game stops right after one is switched on, the next start keeps that effect off and the World tab says which one it was (with a button to try it again).
 - **Character**: new **Head → Shape** choice with a **D20 die**: a twenty-sided die with its numbers, in the head's colour. Friends with the mod see it; on versions up to 1.5.0 they see your normal head.
 - **Extras**: speech bubble texts left in Italian by an older version (`Ciao!`, `Foto!`, ...) are translated to English on first start. Texts you wrote yourself are kept.
 

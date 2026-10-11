@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using BepInEx;
 using BepInEx.Unity.IL2CPP;
 using Enviro;
 using Il2CppInterop.Runtime;
-using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -65,6 +65,26 @@ namespace BigWalk.ModMenu.World
             for (int i = 0; i < Keys.Length; i++) this[i] = 0f;
             Scanlines = false;
         }
+
+        // The filter is made of eight effects; each one is switched on, and checked, on its own.
+        public const int Effects = 8;
+        public static readonly string[] EffectKeys = { "Colour", "Balance", "Sepia", "Vignette", "Grain", "Aberration", "Distortion", "Scanlines" };
+        public static readonly string[] EffectNames = { "Colour", "White balance", "Sepia", "Vignette", "Grain", "Chromatic aberration", "Lens distortion", "Scanlines" };
+
+        public bool Wants(int effect)
+        {
+            switch (effect)
+            {
+                case 0: return Mathf.Abs(Exposure) + Mathf.Abs(Contrast) + Mathf.Abs(Saturation) + Mathf.Abs(Hue) > 1e-4f;
+                case 1: return Mathf.Abs(Temperature) + Mathf.Abs(Tint) > 1e-4f;
+                case 2: return Sepia > 1e-4f;
+                case 3: return Vignette > 1e-4f;
+                case 4: return Grain > 1e-4f;
+                case 5: return Aberration > 1e-4f;
+                case 6: return Mathf.Abs(Distortion) > 1e-4f;
+                default: return Scanlines;
+            }
+        }
     }
 
     public sealed class WorldModule : MenuModule
@@ -92,8 +112,22 @@ namespace BigWalk.ModMenu.World
         private FilmGrain _grain;
         private ChromaticAberration _aberration;
         private LensDistortion _distortion;
-        private Texture2D _scanlines;
         private bool _volumeFailed;
+        private int _rebuilds;
+        private float _builtAt;
+
+        // An effect is "live" once it is really switched on. One the game has not run yet is switched on alone,
+        // with a note left on disk first: if the game stops within the next moments, the next start finds the
+        // note, knows which effect did it and keeps that one off.
+        private readonly bool[] _live = new bool[FilterSettings.Effects];
+        private readonly bool[] _blocked = new bool[FilterSettings.Effects];
+        private readonly bool[] _checked = new bool[FilterSettings.Effects];
+        private string _checkedOn = "";
+        private bool _checkedOnCompared;
+        private int _checking = -1, _checkUntilFrame;
+        private float _checkUntil;
+        private const string CheckFile = "filter-check.txt";
+        private const int VolumeEffects = 7; // the eighth, scanlines, is drawn over the picture
 
         private static EnviroManager Env
         {
@@ -139,6 +173,45 @@ namespace BigWalk.ModMenu.World
             }
             for (int i = 0; i < FilterSettings.Keys.Length; i++) _filter[i] = c.GetFloat("Filter." + FilterSettings.Keys[i], 0f);
             _filter.Scanlines = c.GetBool("Filter.Scanlines", false);
+            ReadEffects(c.GetString("Filter.Blocked", ""), _blocked);
+            ReadEffects(c.GetString("Filter.Checked", ""), _checked);
+            _checkedOn = c.GetString("Filter.CheckedOn", "");
+            FindInterruptedCheck();
+        }
+
+        private static void ReadEffects(string list, bool[] into)
+        {
+            Array.Clear(into, 0, into.Length);
+            foreach (string key in list.Split(','))
+            {
+                int i = Array.IndexOf(FilterSettings.EffectKeys, key.Trim());
+                if (i >= 0) into[i] = true;
+            }
+        }
+
+        private static string WriteEffects(bool[] from)
+        {
+            var keys = new List<string>();
+            for (int i = 0; i < from.Length; i++) if (from[i]) keys.Add(FilterSettings.EffectKeys[i]);
+            return string.Join(",", keys);
+        }
+
+        // The note of a check that never finished: the game stopped while that effect was being tried.
+        private void FindInterruptedCheck()
+        {
+            try
+            {
+                string path = Path.Combine(DataPath, CheckFile);
+                if (!File.Exists(path)) return;
+                int i = Array.IndexOf(FilterSettings.EffectKeys, File.ReadAllText(path).Trim());
+                File.Delete(path);
+                if (i < 0) return;
+                _blocked[i] = true;
+                _checked[i] = false;
+                Dirty = true;
+                ModMenuApi.Log.LogWarning($"[World] The game stopped right after the filter effect '{FilterSettings.EffectNames[i]}' was switched on last time: it stays off. It can be tried again from the World tab.");
+            }
+            catch (Exception ex) { ModMenuApi.Log.LogWarning($"[World] Could not read the filter check note: {ex.Message}"); }
         }
 
         public override void Save(ModConfig c)
@@ -152,6 +225,9 @@ namespace BigWalk.ModMenu.World
             }
             for (int i = 0; i < FilterSettings.Keys.Length; i++) c.Set("Filter." + FilterSettings.Keys[i], _filter[i]);
             c.Set("Filter.Scanlines", _filter.Scanlines);
+            c.Set("Filter.Blocked", WriteEffects(_blocked));
+            c.Set("Filter.Checked", WriteEffects(_checked));
+            c.Set("Filter.CheckedOn", _checkedOn);
         }
 
         public override void Update()
@@ -160,6 +236,13 @@ namespace BigWalk.ModMenu.World
             {
                 _timeApplied = false;
                 _timeWritten = -1f;
+                // Leaving the world (or the game) in the middle of a check says nothing about the effect.
+                if (_checking >= 0)
+                {
+                    _live[_checking] = false;
+                    EndCheck();
+                    _filterDirty = true;
+                }
                 return;
             }
 
@@ -209,20 +292,50 @@ namespace BigWalk.ModMenu.World
 
         public override void OnObjectsLost()
         {
-            _scanlines = null;
             _volume = null;
             _filterDirty = true;
         }
 
+        private const string VolumeName = "bwmm_filter_volume";
+
+        private bool VolumeAlive()
+        {
+            if (_volume == null || !Game.Alive(_volume) || !Game.Alive(_volumeObject)) return false;
+            // A part that could not be added stays null; one that was added must still be there.
+            return (_colour == null || Game.Alive(_colour)) && (_balance == null || Game.Alive(_balance)) && (_mixer == null || Game.Alive(_mixer))
+                && (_vignette == null || Game.Alive(_vignette)) && (_grain == null || Game.Alive(_grain))
+                && (_aberration == null || Game.Alive(_aberration)) && (_distortion == null || Game.Alive(_distortion));
+        }
+
+        // Removes our volume, also one we lost the handle of: left behind it would keep its filter on for good.
+        private void DestroyVolume()
+        {
+            _volume = null;
+            _volumeObject = null;
+            _colour = null; _balance = null; _mixer = null; _vignette = null; _grain = null; _aberration = null; _distortion = null;
+            for (int i = 0; i < 8; i++)
+            {
+                GameObject old = GameObject.Find(VolumeName);
+                if (old == null) break;
+                old.name = VolumeName + "_old"; // Destroy only happens at the end of the frame
+                old.SetActive(false);
+                UnityEngine.Object.Destroy(old);
+            }
+        }
+
         private bool EnsureVolume()
         {
-            if (_volume != null && !Game.Alive(_volume)) _volume = null;
-            if (_volume != null) return true;
+            if (_volume != null && VolumeAlive()) return true;
             if (_volumeFailed) return false;
             try
             {
-                if (Game.Alive(_volumeObject)) UnityEngine.Object.Destroy(_volumeObject);
-                _volumeObject = new GameObject("bwmm_filter_volume");
+                bool rebuilt = _volume != null || _volumeObject != null;
+                DestroyVolume();
+                // Built again and again means something keeps taking it away: stop instead of doing it every frame.
+                if (Time.unscaledTime - _builtAt > 60f) _rebuilds = 0;
+                _builtAt = Time.unscaledTime;
+                if (rebuilt && ++_rebuilds > 5) throw new InvalidOperationException("the filter volume was lost " + _rebuilds + " times");
+                _volumeObject = new GameObject(VolumeName);
                 UnityEngine.Object.DontDestroyOnLoad(_volumeObject);
                 // Same layer as the game's own volume, so the player camera picks it up.
                 try
@@ -265,18 +378,104 @@ namespace BigWalk.ModMenu.World
             p.value = value;
         }
 
+        private void BeginCheck(int effect)
+        {
+            _checking = effect;
+            _checkUntilFrame = Time.frameCount + 90;
+            _checkUntil = Time.unscaledTime + 2f;
+            try { File.WriteAllText(Path.Combine(DataPath, CheckFile), FilterSettings.EffectKeys[effect]); }
+            catch (Exception ex) { ModMenuApi.LogOnce("check", $"[World] Could not write the filter check note: {ex.Message}"); }
+            ModMenuApi.Log.LogInfo($"[World] Filter: trying '{FilterSettings.EffectNames[effect]}'.");
+        }
+
+        private void EndCheck()
+        {
+            _checking = -1;
+            try { File.Delete(Path.Combine(DataPath, CheckFile)); }
+            catch (Exception ex) { ModMenuApi.LogOnce("check", $"[World] Could not remove the filter check note: {ex.Message}"); }
+        }
+
+        // Decides which effects are on this frame. Returns true when that changed.
+        private bool StepEffects()
+        {
+            if (!_checkedOnCompared)
+            {
+                // What ran fine on another version of the game or of the mod is checked again.
+                _checkedOnCompared = true;
+                string now = ModMenuApi.Version;
+                try { now = Application.version + "/" + ModMenuApi.Version; } catch { }
+                if (_checkedOn != now)
+                {
+                    _checkedOn = now;
+                    Array.Clear(_checked, 0, _checked.Length);
+                    Dirty = true;
+                }
+            }
+
+            FilterSettings f = _filter;
+            bool changed = false;
+            for (int i = 0; i < FilterSettings.Effects; i++)
+            {
+                if (_live[i] && (!f.Wants(i) || _blocked[i]))
+                {
+                    _live[i] = false;
+                    changed = true;
+                    if (_checking == i) EndCheck();
+                }
+            }
+            if (_checking >= 0 && Time.frameCount >= _checkUntilFrame && Time.unscaledTime >= _checkUntil)
+            {
+                ModMenuApi.Log.LogInfo($"[World] Filter: '{FilterSettings.EffectNames[_checking]}' runs fine.");
+                _checked[_checking] = true;
+                Dirty = true;
+                EndCheck();
+            }
+            for (int i = 0; i < FilterSettings.Effects; i++)
+            {
+                if (_live[i] || _blocked[i] || !f.Wants(i)) continue;
+                if (!_checked[i])
+                {
+                    if (_checking >= 0) continue; // one at a time, so the note names the right one
+                    BeginCheck(i);
+                }
+                _live[i] = true;
+                changed = true;
+            }
+            return changed;
+        }
+
+        private bool AnyVolumeEffectLive()
+        {
+            for (int i = 0; i < VolumeEffects; i++) if (_live[i]) return true;
+            return false;
+        }
+
         private void ApplyFilter()
         {
-            FilterSettings f = _filter;
-            if (f.IsNeutral && _volume == null) return; // nothing was ever switched on
-            if (_volume != null && !Game.Alive(_volume)) { _volume = null; _filterDirty = true; }
-            if (!_filterDirty && _volume != null) return;
+            if (StepEffects()) _filterDirty = true;
+            if (_volume == null && !AnyVolumeEffectLive()) return; // nothing was ever switched on
+            if (_volume != null && !VolumeAlive()) _filterDirty = true;
+            if (!_filterDirty) return;
             if (!EnsureVolume()) return;
             _filterDirty = false;
 
+            try
+            {
+                WriteVolume();
+            }
+            catch (Il2CppInterop.Runtime.ObjectCollectedException)
+            {
+                // A part of the volume went away under our hands: build it again on the next frame.
+                _filterDirty = true;
+            }
+        }
+
+        private void WriteVolume()
+        {
+            FilterSettings f = _filter;
             if (_colour != null)
             {
-                _colour.active = Mathf.Abs(f.Exposure) + Mathf.Abs(f.Contrast) + Mathf.Abs(f.Saturation) + Mathf.Abs(f.Hue) > 1e-4f;
+                _colour.active = _live[0];
                 Put(_colour.postExposure, f.Exposure);
                 Put(_colour.contrast, f.Contrast);
                 Put(_colour.saturation, f.Saturation);
@@ -284,7 +483,7 @@ namespace BigWalk.ModMenu.World
             }
             if (_balance != null)
             {
-                _balance.active = Mathf.Abs(f.Temperature) + Mathf.Abs(f.Tint) > 1e-4f;
+                _balance.active = _live[1];
                 Put(_balance.temperature, f.Temperature);
                 Put(_balance.tint, f.Tint);
             }
@@ -292,7 +491,7 @@ namespace BigWalk.ModMenu.World
             {
                 // Blend from "unchanged" to the classic sepia matrix.
                 float s = Mathf.Clamp01(f.Sepia);
-                _mixer.active = s > 1e-4f;
+                _mixer.active = _live[2];
                 Put(_mixer.redOutRedIn, Mathf.Lerp(100f, 39.3f, s));
                 Put(_mixer.redOutGreenIn, Mathf.Lerp(0f, 76.9f, s));
                 Put(_mixer.redOutBlueIn, Mathf.Lerp(0f, 18.9f, s));
@@ -305,45 +504,44 @@ namespace BigWalk.ModMenu.World
             }
             if (_vignette != null)
             {
-                _vignette.active = f.Vignette > 1e-4f;
-                Put(_vignette.intensity, f.Vignette);
+                _vignette.active = _live[3];
+                Put(_vignette.intensity, _live[3] ? f.Vignette : 0f);
             }
             if (_grain != null)
             {
-                _grain.active = f.Grain > 1e-4f;
-                Put(_grain.intensity, f.Grain);
+                _grain.active = _live[4];
+                Put(_grain.intensity, _live[4] ? f.Grain : 0f);
             }
             if (_aberration != null)
             {
-                _aberration.active = f.Aberration > 1e-4f;
-                Put(_aberration.intensity, f.Aberration);
+                _aberration.active = _live[5];
+                Put(_aberration.intensity, _live[5] ? f.Aberration : 0f);
             }
             if (_distortion != null)
             {
-                _distortion.active = Mathf.Abs(f.Distortion) > 1e-4f;
-                Put(_distortion.intensity, f.Distortion);
+                _distortion.active = _live[6];
+                Put(_distortion.intensity, _live[6] ? f.Distortion : 0f);
             }
-            _volume.enabled = !f.IsNeutral;
+            _volume.enabled = AnyVolumeEffectLive();
         }
 
+        // Dark lines drawn with the engine's own white texture: nothing of ours is kept between frames.
         public override void DrawOverlay()
         {
-            if (!_filter.Scanlines || !Game.InWorld) return;
-            if (!Game.Alive(_scanlines))
+            if (!_live[7] || !Game.InWorld) return;
+            Event ev = Event.current;
+            if (ev == null || ev.type != EventType.Repaint) return;
+            Texture2D white = Texture2D.whiteTexture;
+            if (white == null) return;
+
+            float pitch = Mathf.Max(4f, Mathf.Ceil(Screen.height / 270f));
+            Color previous = GUI.color;
+            GUI.color = new Color(0f, 0f, 0f, 0.2f);
+            for (float y = 0f; y < Screen.height; y += pitch)
             {
-                _scanlines = new Texture2D(1, 4, TextureFormat.RGBA32, false);
-                _scanlines.hideFlags = HideFlags.HideAndDontSave;
-                _scanlines.wrapMode = TextureWrapMode.Repeat;
-                _scanlines.filterMode = FilterMode.Point;
-                var px = new Il2CppStructArray<Color32>(4);
-                px[0] = new Color32(0, 0, 0, 70);
-                px[1] = new Color32(0, 0, 0, 25);
-                px[2] = new Color32(0, 0, 0, 0);
-                px[3] = new Color32(0, 0, 0, 25);
-                _scanlines.SetPixels32(px);
-                _scanlines.Apply(false);
+                GUI.DrawTexture(new Rect(0f, y, Screen.width, pitch * 0.5f), white);
             }
-            GUI.DrawTextureWithTexCoords(new Rect(0f, 0f, Screen.width, Screen.height), _scanlines, new Rect(0f, 0f, 1f, Screen.height / 4f));
+            GUI.color = previous;
         }
 
         // ---- menu ----
@@ -426,6 +624,18 @@ namespace BigWalk.ModMenu.World
             fc |= ui.Toggle("Old TV scanlines", ref f.Scanlines);
             ui.Note("Grain, aberration and distortion only work if the game ships their shaders: if you see no difference, it does not.", 2);
             if (_volumeFailed) ui.Note("<color=#ff8888>The filter could not start (see the log).</color>");
+            if (_checking >= 0) ui.Note($"<color=#ffee88>Trying {FilterSettings.EffectNames[_checking]} for the first time: effects come on one at a time.</color>");
+            for (int i = 0; i < FilterSettings.Effects; i++)
+            {
+                if (!_blocked[i]) continue;
+                ui.Note($"<color=#ff8888>{FilterSettings.EffectNames[i]} is kept off: the game stopped right after it was switched on.</color>", 2);
+                if (ui.Button($"Try {FilterSettings.EffectNames[i]} again"))
+                {
+                    _blocked[i] = false;
+                    _checked[i] = false;
+                    fc = true;
+                }
+            }
 
             if (fc)
             {

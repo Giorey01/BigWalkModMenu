@@ -347,3 +347,44 @@ Provato in gioco (23:40–23:50, partita da solo avviata dal ponte, foto in `~/b
 **Non provati:** dado visto da un amico in rete (e da un amico con la 1.5.0); dado col colore di testa del gioco
 (la foto è venuta sfocata: il gioco aveva oscurato lo schermo); dado insieme a una foto della faccia e alla testa
 ingrandita da Faces; gli altri cappelli oltre al cilindro, orecchie e corna; il menu a tendina cliccato a mano.
+
+### Filtri che fanno "crashare" il gioco (2026-10-11, dopo la 1.5.0) — segnalato dall'utente
+
+Segnalazione: attivando alcuni filtri della scheda World, come **VHS**, "il gioco sembra crashare". L'utente ha
+chiesto di **non aprire il gioco**: tutto quello che segue è fatto a gioco chiuso.
+
+Cosa si è potuto guardare:
+- Log: quelli rimasti (`Player.log`, `Player-prev.log`, `bigwalk-1..5.log`, `LogOutput.log`) sono di sessioni
+  successive, chiuse normalmente e senza filtri; quella del problema è già stata sovrascritta. Nessun dump di
+  Unity nel prefisso Proton, quindi non risulta un crash nativo: più probabile un blocco dell'immagine o del gioco.
+- Asset del gioco (letti con UnityPy da `data.unity3d`, sola lettura): lo shader `UberPost` ha tutte le varianti
+  `_FILM_GRAIN`, `_CHROMATIC_ABERRATION`, `_DISTORTION` (720 varianti del frammento) e `FinalPost` ha `_FILM_GRAIN`;
+  le dieci texture della grana (`Thin01`…`Large02`) ci sono. Quindi **grana, aberrazione e distorsione non sono
+  state tolte dalla build**: la vecchia ipotesi del diario (punto 6 della lista di prova) è da scartare.
+- `Il2CppInterop` di questa installazione tiene handle forti (`il2cpp_gchandle_new`): resta senza spiegazione
+  l'handle morto della texture delle righe TV visto nella 1.1.0.
+
+**La causa non è stata trovata con certezza.** VHS è l'unico preset che accende insieme grana, aberrazione,
+distorsione e righe TV; le righe TV erano già l'unico pezzo con un difetto noto. Cambiato quindi (`World`):
+
+1. Righe TV senza oggetti nostri: disegnate con `Texture2D.whiteTexture` (al massimo ~270 strisce, solo
+   nell'evento `Repaint`), non più con una `Texture2D` creata dalla mod e tenuta in un campo.
+2. Volume del filtro: prima di crearne uno nuovo si cercano per nome e si tolgono quelli vecchi (`DestroyVolume`).
+   Prima, se l'handle di `bwmm_filter_volume` moriva, l'oggetto restava nel gioco con il filtro acceso per sempre e
+   se ne aggiungeva un altro. `VolumeAlive` controlla anche i sette componenti; un `ObjectCollectedException` mentre
+   si scrivono i valori fa ricostruire il volume invece di contare un errore del modulo; dopo 5 ricostruzioni in
+   un minuto il filtro si ferma con un errore nel log invece di rifarlo a ogni frame.
+3. Prova degli effetti uno alla volta. Il filtro è fatto di otto effetti (`FilterSettings.EffectKeys`: Colour,
+   Balance, Sepia, Vignette, Grain, Aberration, Distortion, Scanlines). Un effetto mai provato con questa versione
+   del gioco e della mod viene acceso da solo: prima si scrive `world/filter-check.txt` con il suo nome, dopo 2 s
+   e 90 frame il file viene tolto e l'effetto segnato come buono (`Filter.Checked`, `Filter.CheckedOn` in
+   `config/world.cfg`). Se all'avvio il file c'è ancora, il gioco si è fermato durante la prova: quell'effetto
+   finisce in `Filter.Blocked`, resta spento, il log lo dice e la scheda mostra una riga rossa con il pulsante
+   "Try … again". Conseguenza visibile: la prima volta un preset si accende un effetto ogni 2 secondi circa.
+   Uscire dal mondo a metà prova annulla la prova; chiudere il gioco con Alt+F4 in quei 2 secondi può bloccare un
+   effetto per errore (si rimedia con il pulsante).
+
+Provato: compilazione di `World`. **Non provato in gioco** (richiesta dell'utente). Da guardare alla prima prova:
+se VHS ferma ancora il gioco, al riavvio `LogOutput.log` e la scheda World dicono quale effetto era in prova;
+le righe del log sono `[World] Filter: trying '…'` e `… runs fine`.
+
