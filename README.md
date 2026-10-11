@@ -140,8 +140,13 @@ bash build.sh             # builds everything, fills dist/pacchetto, makes dist/
 GAME_DIR="/path/to/Big Walk" bash build.sh
 ```
 
-A single project: `dotnet build -c Release` in its folder. Adding `-p:Dev=1` to Core includes the in-game
-test bridge (`Core/Dev.cs`, driven by `tools/dev.sh`); never ship that build.
+On Windows run the same commands from Git Bash (it comes with Git for Windows): the script finds the game in
+`C:\Program Files (x86)\Steam`, and for a game in another library `GAME_DIR="D:/SteamLibrary/steamapps/common/Big Walk"`
+does it. The zips are made with `zip`, Python 3 or the `tar.exe` that Windows 10 and 11 include.
+
+A single project: `dotnet build -c Release` in its folder (on Windows add `-p:GameDir="C:\path	o\Big Walk"`).
+Adding `-p:Dev=1` to Core includes the in-game test bridge (`Core/Dev.cs`, driven by `tools/dev.sh`, or
+`tools/dev.ps1` on Windows); never ship that build.
 
 ## Repository layout
 

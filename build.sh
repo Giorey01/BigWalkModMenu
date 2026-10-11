@@ -7,6 +7,7 @@
 # A release is: dist/BigWalkModMenu-<version>.zip, dist/install.sh, dist/install.ps1 and dist/single/*.zip.
 #
 # Needs the .NET 6 SDK (or newer) and the game installed with BepInEx started at least once.
+# Works on Linux and on Windows from Git Bash. The game is looked for in Steam's usual folder.
 # Game somewhere else:  GAME_DIR="/path/to/Big Walk" bash build.sh
 # dotnet not on PATH:   DOTNET=~/.dotnet/dotnet bash build.sh
 
@@ -28,7 +29,12 @@ if [ -z "$DOTNET" ]; then
   fi
 fi
 
-GAME_DIR="${GAME_DIR:-$HOME/.local/share/Steam/steamapps/common/Big Walk}"
+if [ -z "${GAME_DIR:-}" ]; then
+  GAME_DIR="$HOME/.local/share/Steam/steamapps/common/Big Walk"
+  # Windows (Git Bash): Steam's usual place.
+  WIN_GAME="${PROGRAMFILES:-C:/Program Files} (x86)/Steam/steamapps/common/Big Walk"
+  [ -d "$GAME_DIR" ] || [ ! -d "$WIN_GAME" ] || GAME_DIR="$WIN_GAME"
+fi
 [ -f "$GAME_DIR/BepInEx/interop/Assembly-CSharp.dll" ] || {
   echo "ERROR: no BepInEx/interop/Assembly-CSharp.dll in \"$GAME_DIR\"." >&2
   echo "Install BepInEx, start the game once, or set GAME_DIR." >&2
@@ -55,8 +61,11 @@ echo "Package folder: $PKG"
 
 make_zip() { # zip file, folder whose contents go in it
   if command -v zip >/dev/null 2>&1; then (cd "$2" && zip -qr "$1" .)
-  elif command -v python3 >/dev/null 2>&1; then (cd "$2" && python3 -m zipfile -c "$1" ./*)
+  # "python3 -c" and not "command -v": on Windows python3 can be the Store placeholder, which is found but does not run.
+  elif python3 -c "" >/dev/null 2>&1; then (cd "$2" && python3 -m zipfile -c "$1" ./*)
   elif command -v bsdtar >/dev/null 2>&1; then (cd "$2" && bsdtar -a -cf "$1" ./*)
+  # Windows 10 and 11 come with bsdtar as tar.exe (the "tar" of Git Bash is GNU tar and cannot write zips).
+  elif [ -x "${SYSTEMROOT:-}/System32/tar.exe" ]; then (cd "$2" && "$SYSTEMROOT/System32/tar.exe" -a -cf "$1" *)
   else echo "ERROR: zip, python3 or bsdtar is needed to make the zips." >&2; exit 1
   fi
 }
