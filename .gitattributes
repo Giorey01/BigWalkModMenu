@@ -1,0 +1,7 @@
+# Shell scripts must keep LF line endings even when the repository is cloned on Windows
+# (git's autocrlf would turn them into CRLF, and the copies packed by build.sh would not run on Linux).
+*.sh   text eol=lf
+# Batch files need CRLF; the PowerShell scripts go with them.
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
