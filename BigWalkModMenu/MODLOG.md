@@ -562,6 +562,7 @@ Alla fine: build normale rifatta con `bash build.sh` e installata con `install-w
 del ponte nella DLL di Core, DLL installate identiche a quelle del pacchetto), cartella `dev` tolta. Prima della
 prova non c'era nessuna cartella `BepInEx/plugins/BigWalkModMenu`: nessuna copia di sicurezza da fare. Il numero di
 versione resta 1.5.0.
+
 ## 1.6.0 (2026-10-11) — rilascio di tutto quello che è venuto dopo la 1.5.0
 
 Richiesta dell'utente: una release nuova con tutti i cambiamenti. Nessun codice nuovo in questo passaggio: solo
