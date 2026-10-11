@@ -471,3 +471,24 @@ Provato fuori dal gioco:
   finestra non lo dice. Se il ritmo crolla, in gioco si legge nella scheda ("Live: N pictures a second");
 - Chrome/Edge (provato solo Firefox), una webcam vera.
 
+
+## 1.6.0 (2026-10-11) — rilascio di tutto quello che è venuto dopo la 1.5.0
+
+Richiesta dell'utente: una release nuova con tutti i cambiamenti. Nessun codice nuovo in questo passaggio: solo
+il numero di versione (`Directory.Build.props`, `ModMenuApi.Version`, titolo del README del pacchetto) e il
+changelog, dove "Unreleased" diventa "1.6.0" con due righe in più per le correzioni fatte su Windows (filtri di
+World riletti mentre sono accesi; installer di Windows).
+
+Dentro ci sono: webcam dal vivo (Faces), dieci cappelli, baffi regolabili, posizione del naso, testa a D20
+(Character), la correzione dei filtri che fermavano il gioco (World), i fumetti tradotti (Extras), gli installer
+da una riga, `build.sh` e `tools/dev.ps1` su Windows.
+
+Visto in gioco prima del rilascio (2026-10-11, 11:36–11:43, Linux/Proton, build normale dello stesso sorgente con
+ancora il numero 1.5.0, partita ospitata dall'utente): le 11 schede si registrano, tutte le patch "OK", nel log
+nessun errore o avviso della mod; il server della webcam parte dentro Proton
+(`[Webcam] Page ready on 127.0.0.1:37845`), che era il primo punto dubbio della voce sulla webcam. Gli unici
+errori nel log sono quelli del gioco alla chiusura (Rewired, Steamworks, lobby).
+
+**Non provato:** la build 1.6.0 in sé non è stata avviata (cambia solo il numero rispetto a quella provata);
+resta non provato tutto quello che le voci qui sopra dicono non provato — la webcam sulla testa e in rete, i
+cappelli nuovi, baffi e naso visti in gioco, un amico in rete con questa versione o con la 1.5.0.

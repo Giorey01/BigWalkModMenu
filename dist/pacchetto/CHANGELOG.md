@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.6.0
 - **Faces**: new **Webcam** section: your camera, live, on your head instead of the photo. A page in your browser reads the camera and follows your face; friends in the walk with this version see it too (128×128, about 8 pictures a second). Off at every start, only during a walk, with a banner on screen while it is on.
 - **Character**: ten new hats: cowboy hat, chef hat, beanie, propeller cap, sombrero, fez, viking helmet, santa hat, traffic cone and mushroom. Friends on 1.5.0 or older see you without a hat when you wear one of these.
 - **Character**: the **moustache** can be adjusted: size, width, height, in / out and how much its ends go down or curl up.
@@ -8,6 +8,8 @@
 - **World**: fix for the game stopping when a filter such as **VHS** is switched on. The TV scanlines no longer use a texture of the mod's own, a filter volume that got lost is removed instead of staying on, and every filter effect is tried on its own the first time: if the game stops right after one is switched on, the next start keeps that effect off and the World tab says which one it was (with a button to try it again).
 - **Character**: new **Head → Shape** choice with a **D20 die**: a twenty-sided die with its numbers, in the head's colour. Friends with the mod see it; on versions up to 1.5.0 they see your normal head.
 - **Extras**: speech bubble texts left in Italian by an older version (`Ciao!`, `Foto!`, ...) are translated to English on first start. Texts you wrote yourself are kept.
+- **World**: a filter setting changed from outside the menu (a profile, the settings file) while that filter is on now shows at once.
+- **Windows installers**: a clear error when the game folder is given with a final backslash; `uninstall-windows.ps1 -DryRun` lists what it would remove without asking.
 
 ## 1.5.0
 - **Faces** is now a tab like every other: `BigWalkModMenu/BigWalk.ModMenu.Faces.dll`, no separate `FaceMaskMod` folder.

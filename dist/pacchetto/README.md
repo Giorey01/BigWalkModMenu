@@ -1,4 +1,4 @@
-# Big Walk Mod Menu 1.5.0
+# Big Walk Mod Menu 1.6.0
 
 One in-game menu for Big Walk, with one tab per mod. Every tab is its own DLL: install only the
 ones you want and the menu shows only those. Everything is client-side unless noted.
