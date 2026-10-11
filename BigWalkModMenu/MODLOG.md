@@ -388,3 +388,33 @@ Provato: compilazione di `World`. **Non provato in gioco** (richiesta dell'utent
 se VHS ferma ancora il gioco, al riavvio `LogOutput.log` e la scheda World dicono quale effetto era in prova;
 le righe del log sono `[World] Filter: trying '…'` e `… runs fine`.
 
+### Altri cappelli, baffi regolabili, posizione del naso (2026-10-11, dopo la 1.5.0) — richiesta dell'utente
+
+- **Cappelli** (`Wardrobe.Hat`, indici 9–18): Cowboy hat, Chef hat, Beanie, Propeller cap, Sombrero, Fez, Viking
+  helmet, Santa hat, Traffic cone, Mushroom. Fatti con le stesse forme di prima (cilindro/cono, sfera, mezza
+  sfera, toro), stessi due colori (cappello e dettagli).
+- **Baffi**: cursori sotto l'interruttore Moustache (solo se acceso): Size, Width, Height, In / out, "Ends down /
+  up" (gradi: positivo punte in giù, negativo all'insù; 18 è la forma di prima) e "Original moustache".
+  I baffi stanno ora in un oggetto loro (`bwmm_outfit/accessories/moustache`) che `ApplyOutfit` sposta a ogni
+  frame come fa col cappello; le due metà vengono da `Wardrobe.MoustacheHalf`.
+- **Naso**: tre cursori in Proportions: "Nose height" e "Nose sideways" (gradi, ±70) e "Nose in / out" (raggi di
+  testa). `PlaceNose` ruota il supporto `nose_mesh` attorno al centro della testa (l'ancora dei cappelli), così il
+  naso resta sulla superficie e continua a puntare in fuori. Finché i tre valori sono a zero la posizione del
+  gioco non viene toccata. "Original proportions" li azzera.
+- Rete: in fondo al messaggio dell'aspetto, dopo il byte della testa, 9 byte in più (cappello vero, 3 del naso,
+  5 dei baffi), `WireVersion` invariato. Il byte del cappello al vecchio posto vale 0 per i cappelli nuovi: le
+  versioni fino alla 1.5.0 rifiutano l'intero aspetto se il numero del cappello non lo conoscono
+  (`WireReader.Int`), così invece vedono il resto dell'aspetto senza cappello. Il messaggio è di 57 byte.
+
+Provato fuori dal gioco (programma di prova con finti tipi Unity, non nel repository): andata e ritorno del
+messaggio e del file di configurazione; un aspetto come lo manda la 1.5.0 e uno come lo manda la build col D20
+vengono letti bene; i valori di partenza tornano dentro la tolleranza di `PlaceNose` (0,275° su 0,5°); i dieci
+cappelli hanno misure sensate (base tra 0,23 e 0,72, cima sotto 2,3 raggi), la pallina del cappello di Babbo
+Natale è sulla punta del cono, il cordino del fez arriva alla nappa, i baffi con i valori di partenza sono
+identici a quelli di prima.
+
+**Non provato in gioco** (l'utente ha chiesto di non aprirlo): l'aspetto vero dei cappelli nuovi; i cursori dei
+baffi; il naso — in particolare il verso di "sideways" (da che parte va il segno +), se il gioco riscrive la
+posizione di `nose_mesh` da solo, e l'insieme con il dado D20 e con la testa ingrandita da Faces; tutto visto
+da un amico in rete.
+

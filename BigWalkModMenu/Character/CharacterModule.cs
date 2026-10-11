@@ -55,6 +55,9 @@ namespace BigWalk.ModMenu.Character
         public readonly Tint[] Body = { new Tint(), new Tint(0.33f), new Tint(0.6f) };
         public float Torso = 1f, Bottom = 1f, Hands = 1f, Feet = 1f, Limbs = 1f;
         public float NoseSize = 1f, NoseLength = 1f;
+        // Where the nose sits: degrees around the head (0 = where the game puts it) and distance from it in head radii.
+        public float NoseUp, NoseSide, NoseOut;
+        public float MoustacheSize = 1f, MoustacheWidth = 1f, MoustacheHeight, MoustacheForward, MoustacheTilt = Wardrobe.MoustacheTilt;
         public int Head; // index in Wardrobe.HeadNames
         public int Hat;
         public float HatSize = 1f, HatHeight;
@@ -90,7 +93,8 @@ namespace BigWalk.ModMenu.Character
             foreach (Tint t in Body) Write(w, t);
             w.Q8(Torso, 0.3f, 3f).Q8(Bottom, 0.3f, 3f).Q8(Hands, 0.3f, 4f).Q8(Feet, 0.3f, 4f).Q8(Limbs, 0.3f, 4f);
             w.Q8(NoseSize, 0.2f, 5f).Q8(NoseLength, 0.2f, 8f);
-            w.U8(Hat).Q8(HatSize, 0.4f, 3f).Q8(HatHeight, -0.6f, 1.5f);
+            // Versions up to 1.5.0 refuse the whole look when they do not know the hat: they get "no hat" here.
+            w.U8(Hat <= Wardrobe.LastOldHat ? Hat : 0).Q8(HatSize, 0.4f, 3f).Q8(HatHeight, -0.6f, 1.5f);
             Write(w, HatColour);
             Write(w, HatSecond);
             int mask = 0;
@@ -101,7 +105,12 @@ namespace BigWalk.ModMenu.Character
             w.Q8(GlowPower, 0f, 3f);
             Write(w, Trail);
             w.Q8(TrailLength, 0.5f, 15f);
-            w.U8(Head); // added after 1.5.0, at the end: older versions stop reading before it
+            // Added after 1.5.0, at the end: older versions stop reading before these.
+            w.U8(Head);
+            w.U8(Hat);
+            w.Q8(NoseUp, -70f, 70f).Q8(NoseSide, -70f, 70f).Q8(NoseOut, -0.4f, 1f);
+            w.Q8(MoustacheSize, 0.4f, 3f).Q8(MoustacheWidth, 0.4f, 3f).Q8(MoustacheHeight, -0.6f, 0.6f);
+            w.Q8(MoustacheForward, -0.3f, 0.6f).Q8(MoustacheTilt, -60f, 60f);
             return w.ToArray();
         }
 
@@ -138,6 +147,20 @@ namespace BigWalk.ModMenu.Character
                 int head = r.U8();
                 look.Head = head < Wardrobe.HeadNames.Length ? head : 0;
             }
+            if (r.Remaining >= 9)
+            {
+                // The real hat (the one above is what old versions can show); an unknown one keeps that.
+                int hat = r.U8();
+                if (hat < Wardrobe.HatNames.Length) look.Hat = hat;
+                look.NoseUp = r.Q8(-70f, 70f);
+                look.NoseSide = r.Q8(-70f, 70f);
+                look.NoseOut = r.Q8(-0.4f, 1f);
+                look.MoustacheSize = r.Q8(0.4f, 3f);
+                look.MoustacheWidth = r.Q8(0.4f, 3f);
+                look.MoustacheHeight = r.Q8(-0.6f, 0.6f);
+                look.MoustacheForward = r.Q8(-0.3f, 0.6f);
+                look.MoustacheTilt = r.Q8(-60f, 60f);
+            }
             return r.Failed ? null : look;
         }
 
@@ -153,6 +176,14 @@ namespace BigWalk.ModMenu.Character
             Limbs = c.GetFloat(p + "Scale.Limbs", 1f);
             NoseSize = c.GetFloat(p + "Nose.Size", 1f);
             NoseLength = c.GetFloat(p + "Nose.Length", 1f);
+            NoseUp = c.GetFloat(p + "Nose.Up", 0f);
+            NoseSide = c.GetFloat(p + "Nose.Side", 0f);
+            NoseOut = c.GetFloat(p + "Nose.Out", 0f);
+            MoustacheSize = c.GetFloat(p + "Moustache.Size", 1f);
+            MoustacheWidth = c.GetFloat(p + "Moustache.Width", 1f);
+            MoustacheHeight = c.GetFloat(p + "Moustache.Height", 0f);
+            MoustacheForward = c.GetFloat(p + "Moustache.Forward", 0f);
+            MoustacheTilt = c.GetFloat(p + "Moustache.Tilt", Wardrobe.MoustacheTilt);
             Head = Mathf.Clamp(c.GetInt(p + "HeadShape", 0), 0, Wardrobe.HeadNames.Length - 1);
             Hat = Mathf.Clamp(c.GetInt(p + "Hat", 0), 0, Wardrobe.HatNames.Length - 1);
             HatSize = c.GetFloat(p + "Hat.Size", 1f);
@@ -179,6 +210,14 @@ namespace BigWalk.ModMenu.Character
             c.Set(p + "Scale.Limbs", Limbs);
             c.Set(p + "Nose.Size", NoseSize);
             c.Set(p + "Nose.Length", NoseLength);
+            c.Set(p + "Nose.Up", NoseUp);
+            c.Set(p + "Nose.Side", NoseSide);
+            c.Set(p + "Nose.Out", NoseOut);
+            c.Set(p + "Moustache.Size", MoustacheSize);
+            c.Set(p + "Moustache.Width", MoustacheWidth);
+            c.Set(p + "Moustache.Height", MoustacheHeight);
+            c.Set(p + "Moustache.Forward", MoustacheForward);
+            c.Set(p + "Moustache.Tilt", MoustacheTilt);
             c.Set(p + "HeadShape", Head);
             c.Set(p + "Hat", Hat);
             c.Set(p + "Hat.Size", HatSize);
@@ -201,6 +240,10 @@ namespace BigWalk.ModMenu.Character
             public Transform T;
             public Vector3 Original;
             public int Group; // 0 torso, 1 bottom, 2 hands, 3 feet, 4 nose
+            // Only for the nose, which can also be moved.
+            public Vector3 OriginalPosition;
+            public Quaternion OriginalRotation;
+            public bool Moved;
         }
 
         private sealed class Limb
@@ -222,6 +265,8 @@ namespace BigWalk.ModMenu.Character
             public Renderer HeadRenderer;     // the head LOD the game shows or hides
             public GameObject Outfit;
             public string OutfitKey;
+            public Transform Moustache;
+            public readonly Transform[] MoustacheHalves = new Transform[2];
             public Material HatMat, HatSecondMat, AccessoryMat, HeadMat, HeadSecondMat;
             public readonly List<Renderer> OutfitRenderers = new List<Renderer>();
             public Light Glow;
@@ -407,7 +452,11 @@ namespace BigWalk.ModMenu.Character
                 if (t == null || !names.Contains(t.name)) continue;
                 // "nose_mesh" is also the name of a mesh object; the one to scale is the holder under head_mesh.
                 if (t.name == "nose_mesh" && (t.parent == null || t.parent.name != "head_mesh")) continue;
-                body.Parts.Add(new ScaledPart { T = t, Original = t.localScale, Group = PartGroups[Array.IndexOf(PartNames, t.name)] });
+                body.Parts.Add(new ScaledPart
+                {
+                    T = t, Original = t.localScale, Group = PartGroups[Array.IndexOf(PartNames, t.name)],
+                    OriginalPosition = t.localPosition, OriginalRotation = t.localRotation,
+                });
             }
 
             try
@@ -495,6 +544,7 @@ namespace BigWalk.ModMenu.Character
                     default: target = new Vector3(part.Original.x * look.NoseSize * look.NoseLength, part.Original.y * look.NoseSize, part.Original.z * look.NoseSize); break;
                 }
                 if ((part.T.localScale - target).sqrMagnitude > 1e-8f) part.T.localScale = target;
+                if (part.Group == 4) PlaceNose(body, look, part);
             }
 
             foreach (Limb limb in body.Limbs)
@@ -503,6 +553,29 @@ namespace BigWalk.ModMenu.Character
                 float target = limb.Original * look.Limbs;
                 if (Mathf.Abs(limb.Spline.armThickness - target) > 1e-5f) limb.Spline.armThickness = target;
             }
+        }
+
+        // Turns the nose around the head's centre, so it stays on the surface and keeps pointing outwards.
+        private static void PlaceNose(Body body, Look look, ScaledPart part)
+        {
+            // Half a degree of slack: a value that travelled as one byte does not come back as exactly zero.
+            bool moved = Mathf.Abs(look.NoseUp) > 0.5f || Mathf.Abs(look.NoseSide) > 0.5f || Mathf.Abs(look.NoseOut) > 0.01f;
+            if (!moved && !part.Moved) return; // never touched: the game's own values stay as they are
+
+            Vector3 position = part.OriginalPosition;
+            Quaternion rotation = part.OriginalRotation;
+            if (moved)
+            {
+                if (!EnsureAnchor(body)) return;
+                // In the head's space the face looks towards -X and up is +Y.
+                Vector3 centre = body.Anchor.localPosition;
+                Quaternion turn = Quaternion.Euler(0f, look.NoseSide, -look.NoseUp);
+                position = centre + turn * (part.OriginalPosition - centre) + turn * Vector3.left * (look.NoseOut * body.Anchor.localScale.x);
+                rotation = turn * part.OriginalRotation;
+            }
+            if ((part.T.localPosition - position).sqrMagnitude > 1e-10f) part.T.localPosition = position;
+            if (Quaternion.Angle(part.T.localRotation, rotation) > 0.01f) part.T.localRotation = rotation;
+            part.Moved = moved;
         }
 
         // ---- hats and accessories ----
@@ -556,6 +629,7 @@ namespace BigWalk.ModMenu.Character
                 body.OutfitKey = key;
                 if (body.Outfit != null) UnityEngine.Object.Destroy(body.Outfit);
                 body.Outfit = null;
+                body.Moustache = null;
                 body.OutfitRenderers.Clear();
                 if (wanted && EnsureAnchor(body)) BuildOutfit(body, look);
             }
@@ -567,6 +641,21 @@ namespace BigWalk.ModMenu.Character
             {
                 hat.localScale = new Vector3(look.HatSize, look.HatSize, look.HatSize);
                 hat.localPosition = new Vector3(0f, look.HatHeight + (look.Head != 0 ? Wardrobe.DieHatLift : 0f), 0f);
+            }
+
+            if (body.Moustache != null)
+            {
+                body.Moustache.localPosition = Wardrobe.MoustacheCentre + new Vector3(-look.MoustacheForward, look.MoustacheHeight, 0f);
+                body.Moustache.localScale = new Vector3(look.MoustacheSize, look.MoustacheSize, look.MoustacheSize);
+                for (int i = 0; i < 2; i++)
+                {
+                    Transform half = body.MoustacheHalves[i];
+                    if (half == null) continue;
+                    ShapePart shape = Wardrobe.MoustacheHalf(i == 0 ? 1 : -1, look.MoustacheWidth, look.MoustacheTilt);
+                    half.localPosition = shape.Position;
+                    half.localRotation = Quaternion.Euler(shape.Euler);
+                    half.localScale = shape.Scale;
+                }
             }
 
             Game.SetMaterialColour(body.HatMat, look.HatColour.Colour);
@@ -638,17 +727,29 @@ namespace BigWalk.ModMenu.Character
                 AddPart(body, hatRoot.transform, part, part.Secondary ? body.HatSecondMat : body.HatMat);
             }
             var acc = new List<ShapePart>();
+            if (look.Accessories[Wardrobe.Moustache])
+            {
+                // In an object of its own, which ApplyOutfit moves and resizes as the sliders say.
+                var moustache = new GameObject("moustache");
+                moustache.transform.SetParent(accRoot.transform, false);
+                body.Moustache = moustache.transform;
+                for (int i = 0; i < 2; i++)
+                {
+                    ShapePart half = Wardrobe.MoustacheHalf(i == 0 ? 1 : -1, look.MoustacheWidth, look.MoustacheTilt);
+                    body.MoustacheHalves[i] = AddPart(body, moustache.transform, half, body.AccessoryMat);
+                }
+            }
             for (int i = 0; i < look.Accessories.Length; i++)
             {
                 acc.Clear();
-                if (look.Accessories[i]) Wardrobe.AddAccessory(acc, i);
+                if (look.Accessories[i] && i != Wardrobe.Moustache) Wardrobe.AddAccessory(acc, i);
                 // Inner ears take the hat's detail colour so they stand out.
                 foreach (ShapePart part in acc) AddPart(body, accRoot.transform, part, part.Secondary ? body.HatSecondMat : body.AccessoryMat);
             }
             body.Outfit = root;
         }
 
-        private static void AddPart(Body body, Transform parent, ShapePart part, Material material)
+        private static Transform AddPart(Body body, Transform parent, ShapePart part, Material material)
         {
             var go = new GameObject("part");
             go.layer = body.Anchor.gameObject.layer;
@@ -660,6 +761,7 @@ namespace BigWalk.ModMenu.Character
             var renderer = go.AddComponent<MeshRenderer>();
             renderer.sharedMaterial = material;
             body.OutfitRenderers.Add(renderer);
+            return go.transform;
         }
 
         // ---- light and trail ----
@@ -768,9 +870,13 @@ namespace BigWalk.ModMenu.Character
             changed |= ui.Slider($"Arm and leg thickness: {Pct(look.Limbs)}", ref look.Limbs, 0.3f, 4f, 0.05f);
             changed |= ui.Slider($"Nose size: {Pct(look.NoseSize)}", ref look.NoseSize, 0.2f, 5f, 0.05f);
             changed |= ui.Slider($"Nose length: {Pct(look.NoseLength)}", ref look.NoseLength, 0.2f, 8f, 0.1f);
+            changed |= ui.Slider($"Nose height: {look.NoseUp:+0;-0;0}°", ref look.NoseUp, -70f, 70f, 1f);
+            changed |= ui.Slider($"Nose sideways: {look.NoseSide:+0;-0;0}°", ref look.NoseSide, -70f, 70f, 1f);
+            changed |= ui.Slider($"Nose in / out: {look.NoseOut:+0.00;-0.00;0}", ref look.NoseOut, -0.4f, 1f, 0.02f);
             if (ui.Button("Original proportions"))
             {
                 look.Torso = look.Bottom = look.Hands = look.Feet = look.Limbs = look.NoseSize = look.NoseLength = 1f;
+                look.NoseUp = look.NoseSide = look.NoseOut = 0f;
                 changed = true;
             }
             ui.Note("Head size is in the Faces tab.");
@@ -791,6 +897,19 @@ namespace BigWalk.ModMenu.Character
             for (int i = 0; i < look.Accessories.Length; i++)
             {
                 changed |= ui.Toggle(Wardrobe.AccessoryNames[i], ref look.Accessories[i]);
+                if (i != Wardrobe.Moustache || !look.Accessories[i]) continue;
+                changed |= ui.Slider($"   Size: {Pct(look.MoustacheSize)}", ref look.MoustacheSize, 0.4f, 3f, 0.05f);
+                changed |= ui.Slider($"   Width: {Pct(look.MoustacheWidth)}", ref look.MoustacheWidth, 0.4f, 3f, 0.05f);
+                changed |= ui.Slider($"   Height: {look.MoustacheHeight:+0.00;-0.00;0}", ref look.MoustacheHeight, -0.6f, 0.6f, 0.02f);
+                changed |= ui.Slider($"   In / out: {look.MoustacheForward:+0.00;-0.00;0}", ref look.MoustacheForward, -0.3f, 0.6f, 0.02f);
+                changed |= ui.Slider($"   Ends down / up: {look.MoustacheTilt:+0;-0;0}°", ref look.MoustacheTilt, -60f, 60f, 1f);
+                if (ui.Button("   Original moustache"))
+                {
+                    look.MoustacheSize = look.MoustacheWidth = 1f;
+                    look.MoustacheHeight = look.MoustacheForward = 0f;
+                    look.MoustacheTilt = Wardrobe.MoustacheTilt;
+                    changed = true;
+                }
             }
             ui.Note("Hat and accessory colours are chosen above, under \"Colour of\".");
 

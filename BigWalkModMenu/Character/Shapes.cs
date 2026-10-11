@@ -368,7 +368,12 @@ namespace BigWalk.ModMenu.Character
         public static readonly string[] HatNames =
         {
             "None", "Top hat", "Party hat", "Wizard hat", "Bowler", "Crown", "Halo", "Antenna", "Cap",
+            "Cowboy hat", "Chef hat", "Beanie", "Propeller cap", "Sombrero", "Fez", "Viking helmet", "Santa hat",
+            "Traffic cone", "Mushroom",
         };
+
+        /// <summary>The last hat that versions up to 1.5.0 know; they refuse a look with a higher number.</summary>
+        public const int LastOldHat = 8;
 
         public static readonly string[] AccessoryNames = { "Glasses", "Moustache", "Ears", "Horns" };
 
@@ -439,8 +444,82 @@ namespace BigWalk.ModMenu.Character
                     p.Add(new ShapePart(Shapes.Cylinder(1f, 1f), V(-0.95f, 0.26f, 0f), V(0.75f, 0.05f, 0.62f), default, true));
                     p.Add(new ShapePart(Shapes.Sphere, V(0f, 1.06f, 0f), U(0.08f), default, true));
                     break;
+                case 9: // cowboy: brim wider at the sides
+                    p.Add(new ShapePart(Shapes.Cylinder(1f, 1f), V(0f, 0.66f, 0f), V(1.3f, 0.05f, 1.55f)));
+                    p.Add(new ShapePart(Shapes.Cylinder(1f, 0.82f), V(0f, 0.68f, 0f), V(0.73f, 0.62f, 0.73f)));
+                    p.Add(new ShapePart(Shapes.Cylinder(1f, 1f), V(0f, 0.71f, 0f), V(0.745f, 0.10f, 0.745f), default, true));
+                    break;
+                case 10: // chef: a band and a puff on top
+                    p.Add(new ShapePart(Shapes.Cylinder(1f, 1f), V(0f, 0.70f, 0f), V(0.72f, 0.55f, 0.72f)));
+                    p.Add(new ShapePart(Shapes.Sphere, V(0f, 1.38f, 0f), V(0.94f, 0.42f, 0.94f)));
+                    break;
+                case 11: // beanie with a pom-pom
+                    p.Add(new ShapePart(Shapes.Hemisphere, V(0f, 0.30f, 0f), V(1.03f, 0.80f, 1.03f)));
+                    p.Add(new ShapePart(Shapes.Torus(0.1f), V(0f, 0.33f, 0f), U(0.98f), default, true));
+                    p.Add(new ShapePart(Shapes.Sphere, V(0f, 1.2f, 0f), U(0.2f), default, true));
+                    break;
+                case 12: // propeller cap
+                    p.Add(new ShapePart(Shapes.Hemisphere, V(0f, 0.30f, 0f), V(1.03f, 0.80f, 1.03f)));
+                    p.Add(new ShapePart(Shapes.Cylinder(1f, 1f), V(0f, 1.08f, 0f), V(0.035f, 0.24f, 0.035f), default, true));
+                    p.Add(new ShapePart(Shapes.Sphere, V(0f, 1.33f, 0.28f), V(0.11f, 0.025f, 0.28f), default, true));
+                    p.Add(new ShapePart(Shapes.Sphere, V(0f, 1.33f, -0.28f), V(0.11f, 0.025f, 0.28f), default, true));
+                    p.Add(new ShapePart(Shapes.Sphere, V(0f, 1.33f, 0f), U(0.06f), default, true));
+                    break;
+                case 13: // sombrero
+                    p.Add(new ShapePart(Shapes.Cylinder(1f, 1f), V(0f, 0.62f, 0f), V(1.75f, 0.05f, 1.75f)));
+                    p.Add(new ShapePart(Shapes.Torus(0.05f), V(0f, 0.66f, 0f), U(1.75f), default, true));
+                    p.Add(new ShapePart(Shapes.Cylinder(1f, 0.4f), V(0f, 0.64f, 0f), V(0.80f, 0.95f, 0.80f)));
+                    p.Add(new ShapePart(Shapes.Cylinder(1f, 1f), V(0f, 0.67f, 0f), V(0.81f, 0.10f, 0.81f), default, true));
+                    break;
+                case 14: // fez with a tassel hanging on one side
+                    p.Add(new ShapePart(Shapes.Cylinder(1f, 0.8f), V(0f, 0.72f, 0f), V(0.71f, 0.7f, 0.71f)));
+                    p.Add(new ShapePart(Shapes.Sphere, V(0f, 1.43f, 0f), U(0.05f), default, true));
+                    p.Add(new ShapePart(Shapes.Cylinder(1f, 1f), V(0f, 1.44f, 0f), V(0.02f, 0.62f, 0.02f), V(90f, 0f, 0f), true));
+                    p.Add(new ShapePart(Shapes.Cylinder(1f, 1f), V(0f, 1.06f, 0.62f), V(0.02f, 0.38f, 0.02f), default, true));
+                    p.Add(new ShapePart(Shapes.Sphere, V(0f, 1.0f, 0.62f), V(0.06f, 0.13f, 0.06f), default, true));
+                    break;
+                case 15: // viking helmet: the horns point out and up
+                    p.Add(new ShapePart(Shapes.Hemisphere, V(0f, 0.30f, 0f), V(1.04f, 0.80f, 1.04f)));
+                    p.Add(new ShapePart(Shapes.Torus(0.07f), V(0f, 0.33f, 0f), U(1.0f), default, true));
+                    p.Add(new ShapePart(Shapes.Cylinder(1f, 0f), V(0f, 0.75f, 0.78f), V(0.2f, 0.8f, 0.2f), V(40f, 0f, 0f), true));
+                    p.Add(new ShapePart(Shapes.Cylinder(1f, 0f), V(0f, 0.75f, -0.78f), V(0.2f, 0.8f, 0.2f), V(-40f, 0f, 0f), true));
+                    p.Add(new ShapePart(Shapes.Sphere, V(0f, 1.1f, 0f), U(0.08f), default, true));
+                    break;
+                case 16: // santa: the cone leans back, with a ball on its tip
+                    p.Add(new ShapePart(Shapes.Torus(0.16f), V(0f, 0.62f, 0f), U(0.80f), default, true));
+                    p.Add(new ShapePart(Shapes.Cylinder(1f, 0f), V(0f, 0.64f, 0f), V(0.80f, 1.5f, 0.80f), V(0f, 0f, -10f)));
+                    p.Add(new ShapePart(Shapes.Sphere, V(0.26f, 2.12f, 0f), U(0.17f), default, true));
+                    break;
+                case 17: // traffic cone with a stripe
+                    p.Add(new ShapePart(Shapes.Cylinder(1f, 1f), V(0f, 0.66f, 0f), V(1.0f, 0.07f, 1.0f)));
+                    p.Add(new ShapePart(Shapes.Cylinder(1f, 0.18f), V(0f, 0.70f, 0f), V(0.74f, 1.5f, 0.74f)));
+                    p.Add(new ShapePart(Shapes.Cylinder(1f, 0.757f), V(0f, 1.30f, 0f), V(0.507f, 0.3f, 0.507f), default, true));
+                    break;
+                case 18: // mushroom cap with spots
+                    p.Add(new ShapePart(Shapes.Hemisphere, V(0f, 0.35f, 0f), V(1.45f, 0.95f, 1.45f)));
+                    p.Add(new ShapePart(Shapes.Sphere, V(0f, 1.28f, 0f), V(0.2f, 0.06f, 0.2f), default, true));
+                    for (int i = 0; i < 5; i++)
+                    {
+                        // On the cap's surface, 50 degrees down from its top.
+                        float a = 2f * MathF.PI * i / 5f;
+                        p.Add(new ShapePart(Shapes.Sphere, V(1.11f * MathF.Cos(a), 0.96f, 1.11f * MathF.Sin(a)), U(0.16f), default, true));
+                    }
+                    break;
             }
             return p;
+        }
+
+        /// <summary>Where the moustache sits; its halves are placed around this point.</summary>
+        public static readonly Vector3 MoustacheCentre = new Vector3(-0.97f, -0.24f, 0f);
+        /// <summary>The usual droop of the moustache's ends, in degrees.</summary>
+        public const float MoustacheTilt = 18f;
+        public const int Moustache = 1; // index in AccessoryNames
+
+        /// <summary>One half of the moustache (side +1 or -1), relative to <see cref="MoustacheCentre"/>.
+        /// A positive tilt lowers the ends, a negative one curls them up.</summary>
+        public static ShapePart MoustacheHalf(int side, float width, float tilt)
+        {
+            return new ShapePart(Shapes.Sphere, V(0f, 0f, side * 0.19f * width), V(0.07f, 0.08f, 0.22f * width), V(side * tilt, 0f, 0f));
         }
 
         public static void AddAccessory(List<ShapePart> p, int index)
@@ -454,9 +533,9 @@ namespace BigWalk.ModMenu.Character
                     p.Add(new ShapePart(Shapes.Cylinder(1f, 1f), V(-0.88f, 0.18f, 0.52f), V(0.025f, 0.7f, 0.025f), V(0f, 0f, -90f)));
                     p.Add(new ShapePart(Shapes.Cylinder(1f, 1f), V(-0.88f, 0.18f, -0.52f), V(0.025f, 0.7f, 0.025f), V(0f, 0f, -90f)));
                     break;
-                case 1: // moustache
-                    p.Add(new ShapePart(Shapes.Sphere, V(-0.97f, -0.24f, 0.19f), V(0.07f, 0.08f, 0.22f), V(18f, 0f, 0f)));
-                    p.Add(new ShapePart(Shapes.Sphere, V(-0.97f, -0.24f, -0.19f), V(0.07f, 0.08f, 0.22f), V(-18f, 0f, 0f)));
+                case 1: // moustache: its two halves, around MoustacheCentre
+                    p.Add(MoustacheHalf(1, 1f, MoustacheTilt));
+                    p.Add(MoustacheHalf(-1, 1f, MoustacheTilt));
                     break;
                 case 2: // round ears
                     p.Add(new ShapePart(Shapes.Sphere, V(0f, 0.80f, 0.70f), V(0.16f, 0.36f, 0.36f)));
