@@ -472,6 +472,96 @@ Provato fuori dal gioco:
 - Chrome/Edge (provato solo Firefox), una webcam vera.
 
 
+### Prima prova su Windows di script, filtri, cappelli, baffi, naso e webcam (2026-10-11, 10:40–11:30)
+
+PC di prova: portatile Lenovo, Ryzen 7 4700U con grafica integrata Radeon, 16 GB (circa 1 GB libero durante la
+prova), Windows 11, .NET SDK 10, Git Bash. Gioco 1.6.0 (`Application.version` `1.6.0 2609301522`) mai avviato prima
+su questo PC, senza BepInEx. Finestra 1600×900: 6–12 fps appena entrati, 10–29 fps dopo che l'utente ha messo
+"potato" nella scheda Performance. Sono numeri di questo PC, non della mod.
+
+**Script per Windows**
+- `dist/online/install.ps1` (quello della release 1.5.0, `irm … | iex`) sul gioco vero: trova il gioco, scarica e
+  controlla il pacchetto, installa BepInEx be.785 e le dieci mod. Il modello non compilato si rifiuta di partire.
+- Il primo avvio da Steam ha chiesto un UAC (script di primo avvio del gioco, non nostro); poi BepInEx ha creato
+  `interop` (158 DLL) in meno di 4 minuti.
+- `install-windows.ps1` / `.bat` su una finta cartella (percorso con spazi): `-DryRun`, `-Mod faces,world`, `-Yes`,
+  scelta `m` dal `.bat` con la cartella passata come argomento, cartella sbagliata, mod sconosciuta: tutto giusto.
+- `uninstall-windows.ps1` / `.bat`: `-Yes`, risposte a mano dal `.bat`, `-Yes -BepInEx` (i file personali finiscono
+  in `BigWalkModMenu-my-files`), `-All -BepInEx`, niente installato: tutto giusto.
+- Corretto: `-Game "…\Big Walk\"` (barra finale prima delle virgolette) arrivava con le virgolette e le altre
+  opzioni dentro il percorso e lo script moriva con un'eccezione di `Path.Combine`; ora un errore chiaro, in tutti e
+  due gli script. `uninstall … -DryRun` senza `-Yes` chiedeva conferma e, senza risposta, si annullava: ora non
+  chiede, come l'installer.
+- Corretto: clonando su Windows con `autocrlf` tutti gli `.sh` uscivano CRLF (quindi `install-linux.sh` e
+  `install.sh` impacchettati da Windows non sarebbero partiti su Linux), e i `.bat` della 1.5.0 fatti su Linux
+  avevano LF. Aggiunto `.gitattributes`.
+- `bash build.sh --no-zip` e `bash build.sh` da Git Bash funzionavano già con `GAME_DIR` (circa 75 s; gli zip li ha
+  fatti `python3`). Aggiunti: cartella di Steam di Windows come ripiego, controllo che `python3` parta davvero,
+  `tar.exe` di Windows come ultimo modo di fare gli zip (provato a mano: zip valido). README aggiornato.
+- `tools/dev.ps1`: gemello di `dev.sh`, usato per tutta la prova. `dev.sh` su Windows non è stato provato.
+
+**Ponte di prova**
+- Su questo PC il gioco è entrato nel mondo da solo dopo l'avvio, senza i comandi di menu della voce sul D20
+  (`MicCheckMenu`/`TitleMenu` non erano attivi). Non è chiaro se sia il gioco al primo avvio o l'utente al mouse.
+- Le DLL delle schede con `DevCommand` (Camera, Solo, Voice, ora Faces) vanno compilate anche loro con `-p:Dev=1`,
+  altrimenti `mod camera selfie` risponde `not handled`. Le chiavi dell'aspetto sono `P1.`…`P4.`, non `P0.`.
+- Nuovo `awake`: il personaggio fermo si addormenta (`PlayerSleeper`) e il gioco sfoca e scurisce l'immagine; è
+  lo "schermo oscurato" della prova del D20. `awake` mette `preventSleeping`.
+- Nuovo `mod faces webcam on|off`: accende l'interruttore come il menu e dice server, fotogrammi, ritmo.
+- Trovato con il ponte, non dal menu: rileggere le impostazioni a filtro acceso (`set world Filter.…`) non
+  aggiornava l'immagine se nessun effetto si accendeva o spegneva (Warm → Cool restava Warm), e durante la prima
+  prova di un effetto la nota su disco veniva presa per quella di un blocco. Corretti tutti e due in `World`.
+
+**1. Filtri (World)** — tutti e nove i preset, due giri (il secondo dopo le correzioni, col personaggio sveglio).
+- Log: `trying` / `runs fine` per tutti e otto gli effetti, nell'ordine Colour, Sepia, Vignette, White balance,
+  Grain, Chromatic aberration, Lens distortion, Scanlines; `Filter.Blocked` vuoto, `Filter.Checked` con tutti e otto,
+  `Filter.CheckedOn=1.6.0 2609301522/1.5.0`. Un solo `Filter volume created on layer 12`, nessuna ricostruzione.
+- **VHS e Vintage non hanno bloccato né chiuso il gioco**, né alla prima accensione né riaccesi; fps invariati
+  (19–27 con VHS). Nelle foto: righe TV e frange di colore visibili con VHS, vignetta e toni caldi con Vintage,
+  bianco e nero, seppia, Dream, Warm, Cool e Vivid diversi tra loro, `None` torna all'immagine normale.
+- **La causa del blocco segnalato dall'utente non è stata trovata**: su questo PC non si riproduce. Resta aperta
+  l'ipotesi che dipenda dal PC o dal sistema su cui era stato visto.
+- A 10 fps la prima accensione di un preset dura più dei "2 secondi a effetto": la prova aspetta anche 90 frame
+  (VHS, cinque effetti, circa un minuto).
+- Non provati: i pulsanti dei preset cliccati a mano, il pulsante "Try … again", un blocco vero a metà prova.
+
+**2. Character** — selfie da davanti, uno scatto per cappello.
+- I dieci cappelli nuovi (indici 9–18) compaiono e hanno la forma attesa: cowboy con tesa larga, cuoco, berretto
+  con pompon, berretto con elica, sombrero, fez con cordino, elmo vichingo con corna, Babbo Natale con pompon in
+  punta, cono stradale con fascia, fungo con macchie. Colori di partenza nero e rosso.
+- Baffi: Size 180 % più grandi, Width 170 % più larghi, Height ±0,35 su e giù, In / out +0,4 in fuori e −0,2
+  dentro la testa (spariscono, come atteso), Ends +50° punte in giù e −40° all'insù, 18° uguale a prima.
+  **Difetto non corretto:** sotto circa il 70 % di Size i baffi spariscono dietro il naso (a 50 % non si vedono
+  da davanti), perché rimpiccioliscono verso il loro centro che sta sotto il naso.
+- Naso: Height +40° sale e −40° scende; In / out +0,6 esce, −0,3 rientra. **Il segno + di "Nose sideways" porta il
+  naso verso la destra del personaggio** (a sinistra nell'immagine guardandolo in faccia), il − verso la sua
+  sinistra. Rimettendo i tre valori a zero il naso torna al suo posto, anche dopo il massimo (70°, 70°, 1);
+  il gioco non ha riscritto la posizione nei 20 frame tra un comando e lo scatto.
+- Con il dado D20: cappello di Babbo Natale alzato sopra il dado, baffi sulla faccia davanti, naso spostato
+  (side 30°, up 20°) e rimesso a posto. `faults=0` per tutte le schede, nessuna eccezione nel log.
+- Non provati: i cursori mossi a mano nel menu, "Original moustache" / "Original proportions", la testa
+  ingrandita da Faces, tutto visto da un amico in rete.
+
+**3. Webcam (Faces)** — prova interrotta: l'utente ha chiuso il gioco per continuare su un altro PC.
+- A interruttore spento la porta 37845 è chiusa. Acceso: `[Webcam] Page ready on 127.0.0.1:37845`, il gioco ascolta
+  solo su 127.0.0.1; `GET /` 200 (13.740 byte), `/status` senza chiave 403, con la chiave
+  `{"on":true,"side":128,"fps":15}`, con `Origin` o `Host` di un altro sito 403.
+- Pagina aperta in **Chrome** (`chrome.exe --new-window`, non con il pulsante "Open the page"): i fotogrammi sono
+  arrivati entro 8 secondi, viso trovato (`face=True`). Il video è sulla testa in selfie; in terza persona si vede
+  la nuca col colore del bordo; striscia "WEBCAM LIVE — friends see you" in alto.
+- Ritmo: **6,4 fotogrammi al secondo ricevuti** in 25 s (la scheda segnava 5,8; verso gli amici 3,4–5,8), con il
+  gioco sceso a **6 fps** mentre girano insieme gioco, Chrome e riconoscimento del viso. Il server risponde subito,
+  quindi è la pagina a mandarne meno dei 15 chiesti; la spiegazione più probabile è che su questo PC la grafica
+  integrata sia già tutta del gioco, ma non è stato misurato quanto pesa il riconoscimento del viso e quanto il resto.
+- **Non provati:** il ritmo con la finestra del browser coperta dal gioco e con il gioco a schermo intero (la
+  misura era partita quando il gioco è stato chiuso); spegnere e riaccendere l'interruttore; uscire dalla partita
+  e vedere la camera fermarsi; Edge; i pulsanti "Open the page" / "Copy its address"; i cursori Size / Wrap /
+  Mirror; **la rete con un secondo giocatore** (serve un amico: non provata).
+
+Alla fine: build normale rifatta con `bash build.sh` e installata con `install-windows.ps1 -Yes` (nessuna stringa
+del ponte nella DLL di Core, DLL installate identiche a quelle del pacchetto), cartella `dev` tolta. Prima della
+prova non c'era nessuna cartella `BepInEx/plugins/BigWalkModMenu`: nessuna copia di sicurezza da fare. Il numero di
+versione resta 1.5.0.
 ## 1.6.0 (2026-10-11) — rilascio di tutto quello che è venuto dopo la 1.5.0
 
 Richiesta dell'utente: una release nuova con tutti i cambiamenti. Nessun codice nuovo in questo passaggio: solo
@@ -489,6 +579,11 @@ nessun errore o avviso della mod; il server della webcam parte dentro Proton
 (`[Webcam] Page ready on 127.0.0.1:37845`), che era il primo punto dubbio della voce sulla webcam. Gli unici
 errori nel log sono quelli del gioco alla chiusura (Rewired, Steamworks, lobby).
 
-**Non provato:** la build 1.6.0 in sé non è stata avviata (cambia solo il numero rispetto a quella provata);
-resta non provato tutto quello che le voci qui sopra dicono non provato — la webcam sulla testa e in rete, i
-cappelli nuovi, baffi e naso visti in gioco, un amico in rete con questa versione o con la 1.5.0.
+**Non provato:** la build 1.6.0 in sé non è stata avviata (cambia solo il numero rispetto a quella provata).
+Cappelli, baffi, naso, filtri e webcam sono stati provati su Windows (voce qui sopra, arrivata nel repository
+mentre si preparava questo rilascio): valgono i suoi "non provati" e i suoi difetti aperti — i baffi che
+spariscono dietro il naso sotto circa il 70 % di Size, la causa del blocco dei filtri non trovata, la webcam a
+circa 6 fotogrammi al secondo su quel PC. Mai provata la rete con un amico, né con questa versione né con la 1.5.0.
+
+Nota sul tag: `v1.6.0` punta al commit del rilascio fatto prima di unire la voce su Windows (solo diario); il
+codice è lo stesso.
