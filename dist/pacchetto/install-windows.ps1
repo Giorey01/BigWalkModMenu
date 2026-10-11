@@ -89,6 +89,10 @@ if (-not $Game) {
         Stop-Install ("Cannot find " + $GameName + " in the Steam libraries. Drag the game folder onto install-windows.bat, or: install-windows.ps1 -Game ""D:\path\" + $GameName + """")
     }
 }
+# -Game "D:\Games\Big Walk\" : Windows reads the last \" as a quote, and the options that follow end up in the path.
+if ($Game.Contains('"')) {
+    Stop-Install "The game folder was not understood. Write it without the final backslash: -Game ""D:\Games\Big Walk"""
+}
 $Game = $Game.TrimEnd("\", "/")
 if (-not (Test-Path -LiteralPath (Join $Game $GameExe))) {
     Stop-Install ("There is no """ + $GameExe + """ in """ + $Game + """: that is not the game folder.")

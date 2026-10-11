@@ -77,6 +77,10 @@ if (-not $Game) {
         Stop-Uninstall ("Cannot find " + $GameName + " in the Steam libraries. Drag the game folder onto uninstall-windows.bat.")
     }
 }
+# -Game "D:\Games\Big Walk\" : Windows reads the last \" as a quote, and the options that follow end up in the path.
+if ($Game.Contains('"')) {
+    Stop-Uninstall "The game folder was not understood. Write it without the final backslash: -Game ""D:\Games\Big Walk"""
+}
 $Game = $Game.TrimEnd("\", "/")
 # Nothing is deleted outside a folder that really holds the game's executable.
 if (-not (Test-Path -LiteralPath (Join $Game $GameExe))) {
