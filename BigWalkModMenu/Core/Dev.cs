@@ -132,6 +132,21 @@ namespace BigWalk.ModMenu
                     }
                     return "no active object";
                 }
+                case "awake":
+                {
+                    // A character nobody moves falls asleep after a while, and the game blurs and darkens the
+                    // picture: no good for screenshots. "awake" keeps every character awake, "awake off" stops.
+                    bool keep = a.Length < 2 || a[1] != "off";
+                    int n = 0;
+                    foreach (PlayerCharacter pc in UnityEngine.Object.FindObjectsOfType<PlayerCharacter>())
+                    {
+                        if (pc == null || pc.sleeper == null) continue;
+                        pc.sleeper.preventSleeping = keep;
+                        if (keep) pc.sleeper.RecordAction();
+                        n++;
+                    }
+                    return "ok characters=" + n;
+                }
                 case "host":
                 {
                     // Picks the n-th save on the host screen.
