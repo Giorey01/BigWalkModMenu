@@ -177,6 +177,8 @@ namespace BigWalk.ModMenu.World
             ReadEffects(c.GetString("Filter.Checked", ""), _checked);
             _checkedOn = c.GetString("Filter.CheckedOn", "");
             FindInterruptedCheck();
+            // Settings can be read again while a filter is on (the test bridge does): the new values must reach the picture.
+            _filterDirty = true;
         }
 
         private static void ReadEffects(string list, bool[] into)
@@ -199,6 +201,8 @@ namespace BigWalk.ModMenu.World
         // The note of a check that never finished: the game stopped while that effect was being tried.
         private void FindInterruptedCheck()
         {
+            // While a check is running the note on disk is its own, not one left by a game that stopped.
+            if (_checking >= 0) return;
             try
             {
                 string path = Path.Combine(DataPath, CheckFile);
