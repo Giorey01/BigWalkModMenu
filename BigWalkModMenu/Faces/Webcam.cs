@@ -213,6 +213,18 @@ namespace BigWalk.ModMenu.Faces
             return rf != null && rf.Video != null && rf.Video.Source != null && Time.unscaledTime - rf.VideoAt < StaleAfter ? rf.Video : null;
         }
 
+#if DEV
+        // Test bridge: "mod faces webcam on|off" flips the switch like the menu does, "mod faces webcam" reports.
+        internal static string DevCommand(string[] a)
+        {
+            if (a.Length > 3 && a[3] == "on" && !On) { On = true; EnsureServer(); }
+            else if (a.Length > 3 && a[3] == "off") On = false;
+            bool running = _server != null && _server.Running;
+            return $"on={On} server={running} wanted={(running && _server.Wanted)} sinceRequest={(running ? _server.SecondsSinceRequest : -1):0.0}"
+                + $" frames={(running ? _server.Frames : 0)} rate={_rate:0.0} showing={Showing} face={_faceFound} shared={_shared} sendRate={_sendRate:0.0}";
+        }
+#endif
+
         // ---- menu ----
 
         private static void OpenPage()

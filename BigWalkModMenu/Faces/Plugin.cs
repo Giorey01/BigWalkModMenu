@@ -172,6 +172,9 @@ namespace BigWalk.ModMenu.Faces
         }
 
         public override void DrawOverlay() => Webcam.DrawOverlay();
+#if DEV
+        public override string DevCommand(string[] a) => a.Length > 2 && a[2] == "webcam" ? Webcam.DevCommand(a) : null;
+#endif
         public override void DrawTab(Ui ui)
         {
             DrawFolder(ui);
