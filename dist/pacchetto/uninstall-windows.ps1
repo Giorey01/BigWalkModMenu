@@ -6,7 +6,7 @@
 #   options:  -Yes       answers yes (removes the mods, KEEPS your files)
 #             -All       also removes your files: photos, faces, recordings, settings
 #             -BepInEx   also removes BepInEx (and so every other installed mod)
-#             -DryRun    shows what it would do, without touching anything
+#             -DryRun    shows what it would do, without touching anything and without asking
 
 param(
     [string]$Game = "",
@@ -27,9 +27,9 @@ function Stop-Uninstall([string]$Message) {
     exit 1
 }
 
-# $WithYes: the answer used when -Yes is given
+# $WithYes: the answer used when -Yes is given. A dry run does not ask either, like the installer's.
 function Ask([string]$Question, [bool]$WithYes) {
-    if ($Yes) { return $WithYes }
+    if ($Yes -or $DryRun) { return $WithYes }
     $answer = Read-Host ($Question + " [y/N]")
     return ($answer -match '^(y|yes)$')
 }
