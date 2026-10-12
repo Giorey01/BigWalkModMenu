@@ -588,3 +588,41 @@ circa 6 fotogrammi al secondo su quel PC. Mai provata la rete con un amico, né 
 
 Nota sul tag: `v1.6.0` punta al commit del rilascio fatto prima di unire la voce su Windows (solo diario); il
 codice è lo stesso.
+
+## 1.7.0 (2026-10-12) — diciannove forme di testa in più
+
+Richiesta dell'utente: controllare che cosa nel repository locale non era su GitHub, e nel caso fare commit, push
+e release. I commit erano tutti già su `origin/master`; fuori restavano due file modificati e mai committati
+(`Character/Shapes.cs`, `Character/CharacterModule.cs`, scritti l'11 ottobre verso le 12:00, dopo la 1.6.0).
+
+Che cosa c'è dentro:
+
+- `Wardrobe.HeadNames` passa da 2 a 21 voci: dopo "Normal" e "D20 die" arrivano D12, D8, D6, cubo, creeper,
+  minifig, orco, asino, alieno, due capsule (occhialoni e visiera), omino di pan di zenzero, zucca, uovo,
+  lampadina, televisore, ciambella, gelato e palla da bowling. L'ordine è il numero salvato e mandato agli amici:
+  le forme nuove vanno sempre in fondo.
+- `Shapes`: mesh nuove fatte in codice — `Box`, `Capsule`, `RoundedCylinder`, `Egg`, `Ribbed`, `FineTorus`,
+  `Die(6/8/12)` con i numeri, e `Decals` (pezzi piatti appoggiati su una superficie, per occhi e bocche); il
+  tornio `BuildLathe` fa tutte le forme di rotazione.
+- `ShapePart` può avere un colore suo (`Toned`): un materiale per colore, condiviso fra tutti i personaggi
+  (`CharacterModule.ToneMaterial`).
+- Per ogni forma: di quanto salgono i cappelli (`HeadHatLift`), di quanto avanzano occhiali e baffi
+  (`HeadAccessoryShift`) e il colore "solito" (`HeadUsualColour`), offerto da un pulsante nella scheda.
+- Televisore e ciambella lasciano vedere la testa (schermo, buco): la foto della scheda Faces resta visibile; la
+  nota nella scheda lo dice.
+- Chi ha la 1.6.0 o più vecchia riceve un numero di forma che non conosce e mostra la testa normale
+  (`head < HeadNames.Length ? head : 0`, già presente dalla 1.6.0).
+
+Il resto del passaggio è solo rilascio: numero di versione (`Directory.Build.props`, `ModMenuApi.Version`, titolo
+del README del pacchetto), changelog, riga di Character nei due README.
+
+Visto: `bash build.sh` compila tutti i progetti senza avvisi. Una build dello stesso sorgente (ancora numerata
+1.6.0) era installata nel gioco dall'11 ottobre alle 12:00 e il gioco è stato avviato con quella il 12 ottobre:
+nel log le 11 schede si registrano e non c'è nessun errore della mod, con più personaggi in partita.
+
+**Non provato:** nessuna delle diciannove forme è stata guardata in gioco, né da me né (per quanto risulta)
+dall'utente — in `config/character.cfg` `HeadShape` è 0 per tutti i personaggi, quindi il log pulito dice solo che
+la scheda si carica. Non verificati quindi: proporzioni e posizione di ogni forma sulla testa, facce disegnate
+(creeper, zucca, pan di zenzero...), altezza dei cappelli e distanza degli accessori forma per forma, la foto
+sullo schermo del televisore e nel buco della ciambella, il pulsante del colore solito, la prima persona, la rete
+con un amico. Restano aperti i difetti della 1.6.0.

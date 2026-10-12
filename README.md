@@ -63,7 +63,7 @@ Every tab, taken in game with version 1.5.0. Click one to see it full size.
 | **General** | The base menu, always installed: window, key bindings, menu size, sharing your look with friends who run the mod. |
 | **Faces** | Put a photo on a character's head (and torso), with placement controls. Photos come from a folder you choose. Or your webcam, live. |
 | **Solo** | Play alone with up to four characters: add, switch, remove, gather, follow. Host only. |
-| **Character** | Hats, accessories, a D20 die for a head, colours, proportions, light and trail. |
+| **Character** | Hats, accessories, twenty head shapes (dice, creeper, pumpkin, television, ...), colours, proportions, light and trail. |
 | **Camera** | Selfie, third person, free camera, screenshots up to 4x, hide the interface. |
 | **Performance** | FPS counter, render scale 10–200%, FOV 45–150, antialiasing, shadows, LOD, per-system quality. |
 | **World** | Fixed time of day (only you see it), sky, light and fog, colour filters. |

@@ -62,7 +62,7 @@ namespace BigWalk.ModMenu
 
     public static class ModMenuApi
     {
-        public const string Version = "1.6.0";
+        public const string Version = "1.7.0";
         public static ManualLogSource Log;
         public static string RootPath = "";
 

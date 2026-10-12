@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.7.0
+- **Character**: nineteen more shapes under **Head → Shape**, next to the D20 die: D12, D8 and D6 dice with their numbers, cube, creeper, minifig, ogre, donkey, alien, goggle capsule, visor capsule, gingerbread, pumpkin, egg, light bulb, television, donut, ice cream and bowling ball.
+- **Character**: the **television** uses the head as its screen and the **donut** lets the head look out of its hole, so a face photo from the Faces tab still shows with these two. The other shapes cover it.
+- **Character**: a button gives the head the colour a shape is known by (green for the creeper, orange for the pumpkin, ...). Eyes, stems and other details keep a colour of their own.
+- **Character**: hats and accessories sit at the right height and distance for each shape.
+- Friends on 1.6.0 or older see your normal head when you wear one of the new shapes.
+
 ## 1.6.0
 - **Faces**: new **Webcam** section: your camera, live, on your head instead of the photo. A page in your browser reads the camera and follows your face; friends in the walk with this version see it too (128×128, about 8 pictures a second). Off at every start, only during a walk, with a banner on screen while it is on.
 - **Character**: ten new hats: cowboy hat, chef hat, beanie, propeller cap, sombrero, fez, viking helmet, santa hat, traffic cone and mushroom. Friends on 1.5.0 or older see you without a hat when you wear one of these.
