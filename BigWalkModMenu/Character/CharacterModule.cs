@@ -291,6 +291,7 @@ namespace BigWalk.ModMenu.Character
         private byte[] _lastSent;
         private readonly Dictionary<int, Body> _bodies = new Dictionary<int, Body>();
         private readonly List<int> _stale = new List<int>();
+        private static readonly Dictionary<int, Material> _toneMats = new Dictionary<int, Material>();
         private MaterialPropertyBlock _block;
         private string _colourProperty;
         private int _slot, _colourTarget;
@@ -640,7 +641,7 @@ namespace BigWalk.ModMenu.Character
             if (hat != null)
             {
                 hat.localScale = new Vector3(look.HatSize, look.HatSize, look.HatSize);
-                hat.localPosition = new Vector3(0f, look.HatHeight + (look.Head != 0 ? Wardrobe.DieHatLift : 0f), 0f);
+                hat.localPosition = new Vector3(0f, look.HatHeight + Wardrobe.HeadHatLift[look.Head], 0f);
             }
 
             if (body.Moustache != null)
@@ -718,10 +719,10 @@ namespace BigWalk.ModMenu.Character
 
             foreach (ShapePart part in Wardrobe.Head(look.Head))
             {
-                AddPart(body, headRoot.transform, part, part.Secondary ? body.HeadSecondMat : body.HeadMat);
+                AddPart(body, headRoot.transform, part, part.Toned ? ToneMaterial(part.Tone) : part.Secondary ? body.HeadSecondMat : body.HeadMat);
             }
-            // Glasses and moustache move out to the die's front face (the face looks towards -X).
-            if (look.Head != 0) accRoot.transform.localPosition = new Vector3(-Wardrobe.DieAccessoryShift, 0f, 0f);
+            // Glasses and moustache move out to the shape's front (the face looks towards -X).
+            accRoot.transform.localPosition = new Vector3(-Wardrobe.HeadAccessoryShift[look.Head], 0f, 0f);
             foreach (ShapePart part in Wardrobe.Hat(look.Hat))
             {
                 AddPart(body, hatRoot.transform, part, part.Secondary ? body.HatSecondMat : body.HatMat);
@@ -747,6 +748,17 @@ namespace BigWalk.ModMenu.Character
                 foreach (ShapePart part in acc) AddPart(body, accRoot.transform, part, part.Secondary ? body.HatSecondMat : body.AccessoryMat);
             }
             body.Outfit = root;
+        }
+
+        // Parts with a colour of their own (an eye, a stem) share one material per colour between all characters.
+        private static Material ToneMaterial(Color colour)
+        {
+            Color32 c = colour;
+            int key = c.r << 16 | c.g << 8 | c.b;
+            if (_toneMats.TryGetValue(key, out Material m) && Game.Alive(m)) return m;
+            m = Game.NewMaterial(colour);
+            _toneMats[key] = m;
+            return m;
         }
 
         private static Transform AddPart(Body body, Transform parent, ShapePart part, Material material)
@@ -883,7 +895,17 @@ namespace BigWalk.ModMenu.Character
 
             ui.Header("Head");
             changed |= ui.Dropdown("character.head", "Shape", Wardrobe.HeadNames, ref look.Head);
-            if (look.Head != 0) ui.Note("The die has the head's colour and goes over the head, so it covers a face photo. The nose stays.", 2);
+            if (look.Head == Wardrobe.Television) ui.Note("The head is the screen: a face photo from the Faces tab shows on it. The box has the head's colour.", 2);
+            else if (look.Head == Wardrobe.Donut) ui.Note("The head looks out of the hole, with its own colour and its face photo.");
+            else if (look.Head != 0) ui.Note("The shape has the head's colour and goes over the head, so it covers a face photo. The nose stays.", 2);
+            float[] usual = Wardrobe.HeadUsualColour[look.Head];
+            if (usual != null && ui.Button("Give the head this shape's usual colour"))
+            {
+                Tint head = look.Body[0];
+                head.On = true;
+                head.H = usual[0]; head.S = usual[1]; head.V = usual[2];
+                changed = true;
+            }
 
             ui.Header("Hat");
             changed |= ui.Dropdown("character.hat", "Hat", Wardrobe.HatNames, ref look.Hat);
